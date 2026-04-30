@@ -1,0 +1,18 @@
+location = "polandcentral"
+
+admin_username = "azureuser"
+
+ssh_public_key = "ssh-rsa REPLACE_WITH_YOUR_PUBLIC_KEY"
+
+frontend_vm_size = "Standard_D2s_v3"
+backend_vm_size  = "Standard_D2s_v3"
+runner_vm_size   = "Standard_D2s_v3"
+
+sql_admin_username    = "sqladminuser"
+sql_admin_password    = "REPLACE_WITH_STRONG_PASSWORD"
+sql_database_sku_name = "Basic"
+
+alert_email_address = "YOUR_EMAIL@example.com"
+
+vm_cpu_alert_threshold  = 70
+sql_dtu_alert_threshold = 80

@@ -27,3 +27,15 @@ yarn-error.log*
 **/**/*.tfstate
 **/**/target/
 
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+!*.tfvars.example
+
+# Terraform plan files
+*.tfplan
+tfplan
