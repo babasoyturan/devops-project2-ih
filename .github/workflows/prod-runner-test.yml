@@ -1,0 +1,22 @@
+name: Prod Runner Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-prod-runner:
+    name: Test Prod Self-Hosted Runner
+    runs-on: [self-hosted, prod]
+
+    steps:
+      - name: Print runner info
+        run: |
+          echo "Prod runner is working"
+          hostname
+          whoami
+          pwd
+          uname -a
+
+      - name: Check private IP
+        run: |
+          ip addr | grep "10.70" || true
