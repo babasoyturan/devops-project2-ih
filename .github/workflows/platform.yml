@@ -298,3 +298,4 @@ jobs:
         working-directory: config/ansible
         run: |
           ansible-playbook -i inventories/prod/hosts.yml playbooks/site-prod.yml -e deploy_apps=false
+
