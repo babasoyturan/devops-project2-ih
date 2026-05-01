@@ -1,0 +1,21 @@
+---
+- name: Configure Prod base servers
+  hosts: all
+  gather_facts: true
+  roles:
+    - common
+    - docker
+
+- name: Deploy Prod frontend when enabled
+  hosts: frontend
+  gather_facts: true
+  roles:
+    - frontend
+  when: deploy_apps | default(false) | bool
+
+- name: Deploy Prod backend when enabled
+  hosts: backend
+  gather_facts: true
+  roles:
+    - backend
+  when: deploy_apps | default(false) | bool

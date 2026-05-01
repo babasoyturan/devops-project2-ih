@@ -4,3 +4,6 @@ backend_image_name: "acrg6burgerplc2026.azurecr.io/burger-backend"
 backend_image_tag: "latest"
 
 backend_server_port: 8080
+
+backend_db_username: "{{ lookup('env', 'BACKEND_DB_USERNAME') | default('sqladminuser', true) }}"
+backend_db_password: "{{ lookup('env', 'BACKEND_DB_PASSWORD') | default('', true) }}"

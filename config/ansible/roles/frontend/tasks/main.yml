@@ -1,0 +1,34 @@
+---
+- name: Ensure frontend directory exists
+  ansible.builtin.file:
+    path: "{{ frontend_app_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+
+- name: Login to ACR when credentials are provided
+  community.docker.docker_login:
+    registry_url: "{{ acr_login_server }}"
+    username: "{{ acr_username }}"
+    password: "{{ acr_password }}"
+  when:
+    - acr_username is defined
+    - acr_password is defined
+    - acr_username | length > 0
+    - acr_password | length > 0
+  no_log: true
+
+- name: Render frontend Docker Compose file
+  ansible.builtin.template:
+    src: docker-compose.frontend.yml.j2
+    dest: "{{ frontend_app_dir }}/docker-compose.yml"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0644"
+
+- name: Start frontend container
+  community.docker.docker_compose_v2:
+    project_src: "{{ frontend_app_dir }}"
+    state: present
+    pull: always

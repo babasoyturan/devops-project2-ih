@@ -3,4 +3,6 @@ sonarqube_container_name: sonarqube
 sonarqube_postgres_container_name: sonarqube-postgres
 sonarqube_postgres_db: sonarqube
 sonarqube_postgres_user: sonar
-sonarqube_postgres_password: "ChangeMe_SonarPostgres_Dev_123!"
+sonarqube_postgres_password: "{{ lookup('env', 'SONARQUBE_POSTGRES_PASSWORD') | default('dev_sonar_password_change_me', true) }}"
+
+sonarqube_image: sonarqube:community

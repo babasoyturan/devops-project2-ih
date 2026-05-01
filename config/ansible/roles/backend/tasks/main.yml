@@ -1,0 +1,48 @@
+---
+- name: Ensure backend directory exists
+  ansible.builtin.file:
+    path: "{{ backend_app_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+
+- name: Fail when backend DB password is missing
+  ansible.builtin.fail:
+    msg: "backend_db_password is required for backend deployment."
+  when: backend_db_password is not defined or backend_db_password | length == 0
+
+- name: Login to ACR when credentials are provided
+  community.docker.docker_login:
+    registry_url: "{{ acr_login_server }}"
+    username: "{{ acr_username }}"
+    password: "{{ acr_password }}"
+  when:
+    - acr_username is defined
+    - acr_password is defined
+    - acr_username | length > 0
+    - acr_password | length > 0
+  no_log: true
+
+- name: Render backend environment file
+  ansible.builtin.template:
+    src: backend.env.j2
+    dest: "{{ backend_app_dir }}/.env"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0600"
+  no_log: true
+
+- name: Render backend Docker Compose file
+  ansible.builtin.template:
+    src: docker-compose.backend.yml.j2
+    dest: "{{ backend_app_dir }}/docker-compose.yml"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0644"
+
+- name: Start backend container
+  community.docker.docker_compose_v2:
+    project_src: "{{ backend_app_dir }}"
+    state: present
+    pull: always

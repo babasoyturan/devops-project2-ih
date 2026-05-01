@@ -1,0 +1,27 @@
+---
+- name: Configure Dev base servers
+  hosts: all
+  gather_facts: true
+  roles:
+    - common
+    - docker
+
+- name: Configure Dev SonarQube
+  hosts: sonarqube
+  gather_facts: true
+  roles:
+    - sonarqube
+
+- name: Deploy Dev frontend when enabled
+  hosts: frontend
+  gather_facts: true
+  roles:
+    - frontend
+  when: deploy_apps | default(false) | bool
+
+- name: Deploy Dev backend when enabled
+  hosts: backend
+  gather_facts: true
+  roles:
+    - backend
+  when: deploy_apps | default(false) | bool
