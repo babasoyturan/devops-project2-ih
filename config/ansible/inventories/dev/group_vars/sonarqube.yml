@@ -1,0 +1,6 @@
+---
+sonarqube_container_name: sonarqube
+sonarqube_postgres_container_name: sonarqube-postgres
+sonarqube_postgres_db: sonarqube
+sonarqube_postgres_user: sonar
+sonarqube_postgres_password: "ChangeMe_SonarPostgres_Dev_123!"

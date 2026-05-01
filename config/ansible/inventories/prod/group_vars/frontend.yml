@@ -1,0 +1,4 @@
+---
+frontend_container_name: burger-frontend
+frontend_image_name: "acrg6burgerplc2026.azurecr.io/burger-frontend"
+frontend_image_tag: "latest"

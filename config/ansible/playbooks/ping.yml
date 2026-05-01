@@ -1,0 +1,12 @@
+---
+- name: Verify Ansible SSH connectivity
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Ping target hosts
+      ansible.builtin.ping:
+
+    - name: Show hostname
+      ansible.builtin.command: hostname
+      changed_when: false

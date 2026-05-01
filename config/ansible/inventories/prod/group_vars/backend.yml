@@ -1,0 +1,6 @@
+---
+backend_container_name: burger-backend
+backend_image_name: "acrg6burgerplc2026.azurecr.io/burger-backend"
+backend_image_tag: "latest"
+
+backend_server_port: 8080
