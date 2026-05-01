@@ -36,6 +36,10 @@ on:
           - plan
           - apply
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   context:
     name: Resolve target environment
@@ -96,33 +100,41 @@ jobs:
     env:
       TF_IN_AUTOMATION: "true"
 
-      TF_VAR_location: "polandcentral"
-      TF_VAR_acr_name: ${{ vars.ACR_NAME }}
-      TF_VAR_acr_sku: "Basic"
+      ARM_USE_OIDC: "true"
+      ARM_USE_AZUREAD: "true"
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      TF_VAR_admin_username: "azureuser"
+      TF_VAR_location: ${{ vars.LOCATION }}
+      TF_VAR_acr_name: ${{ vars.ACR_NAME }}
+      TF_VAR_acr_sku: ${{ vars.ACR_SKU }}
+
+      TF_VAR_admin_username: ${{ vars.ADMIN_USERNAME }}
       TF_VAR_ssh_public_key: ${{ vars.SSH_PUBLIC_KEY }}
 
-      TF_VAR_frontend_vm_size: "Standard_D2s_v3"
-      TF_VAR_backend_vm_size: "Standard_D2s_v3"
-      TF_VAR_runner_vm_size: "Standard_D2s_v3"
-      TF_VAR_sonarqube_vm_size: "Standard_D2s_v3"
+      TF_VAR_frontend_vm_size: ${{ vars.FRONTEND_VM_SIZE }}
+      TF_VAR_backend_vm_size: ${{ vars.BACKEND_VM_SIZE }}
+      TF_VAR_runner_vm_size: ${{ vars.RUNNER_VM_SIZE }}
+      TF_VAR_sonarqube_vm_size: ${{ vars.SONARQUBE_VM_SIZE }}
 
       TF_VAR_sql_admin_username: ${{ vars.SQL_ADMIN_USERNAME }}
-      TF_VAR_sql_database_sku_name: "Basic"
+      TF_VAR_sql_database_sku_name: ${{ vars.SQL_DATABASE_SKU }}
 
       TF_VAR_alert_email_address: ${{ vars.ALERT_EMAIL }}
-      TF_VAR_vm_cpu_alert_threshold: "70"
-      TF_VAR_sql_dtu_alert_threshold: "80"
+      TF_VAR_vm_cpu_alert_threshold: ${{ vars.VM_CPU_ALERT_THRESHOLD }}
+      TF_VAR_sql_dtu_alert_threshold: ${{ vars.SQL_DTU_ALERT_THRESHOLD }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Azure login
+      - name: Azure login with OIDC
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
