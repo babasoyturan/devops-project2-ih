@@ -1,0 +1,288 @@
+name: Platform Provision and Configure
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+    paths:
+      - "infra/terraform/**"
+      - "config/ansible/**"
+      - ".github/workflows/platform.yml"
+
+  push:
+    branches:
+      - dev
+      - main
+    paths:
+      - "infra/terraform/**"
+      - "config/ansible/**"
+      - ".github/workflows/platform.yml"
+
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+      action:
+        description: "Action"
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+
+jobs:
+  context:
+    name: Resolve target environment
+    runs-on: ubuntu-latest
+
+    outputs:
+      target_env: ${{ steps.resolve.outputs.target_env }}
+      should_apply: ${{ steps.resolve.outputs.should_apply }}
+
+    steps:
+      - name: Resolve environment and action
+        id: resolve
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            ref="${{ github.base_ref }}"
+          elif [[ "${{ github.event_name }}" == "push" ]]; then
+            ref="${{ github.ref_name }}"
+          else
+            ref="${{ inputs.environment }}"
+          fi
+
+          case "$ref" in
+            dev)
+              target_env="dev"
+              ;;
+            main)
+              target_env="prod"
+              ;;
+            prod)
+              target_env="prod"
+              ;;
+            *)
+              echo "Unsupported target ref/environment: $ref"
+              exit 1
+              ;;
+          esac
+
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            should_apply="true"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.action }}" == "apply" ]]; then
+            should_apply="true"
+          else
+            should_apply="false"
+          fi
+
+          echo "target_env=$target_env" >> "$GITHUB_OUTPUT"
+          echo "should_apply=$should_apply" >> "$GITHUB_OUTPUT"
+
+          echo "Target environment: $target_env"
+          echo "Should apply: $should_apply"
+
+  terraform:
+    name: Terraform plan/apply
+    needs: context
+    runs-on: ubuntu-latest
+
+    env:
+      TF_IN_AUTOMATION: "true"
+
+      TF_VAR_location: "polandcentral"
+      TF_VAR_acr_name: ${{ vars.ACR_NAME }}
+      TF_VAR_acr_sku: "Basic"
+
+      TF_VAR_admin_username: "azureuser"
+      TF_VAR_ssh_public_key: ${{ vars.SSH_PUBLIC_KEY }}
+
+      TF_VAR_frontend_vm_size: "Standard_D2s_v3"
+      TF_VAR_backend_vm_size: "Standard_D2s_v3"
+      TF_VAR_runner_vm_size: "Standard_D2s_v3"
+      TF_VAR_sonarqube_vm_size: "Standard_D2s_v3"
+
+      TF_VAR_sql_admin_username: ${{ vars.SQL_ADMIN_USERNAME }}
+      TF_VAR_sql_database_sku_name: "Basic"
+
+      TF_VAR_alert_email_address: ${{ vars.ALERT_EMAIL }}
+      TF_VAR_vm_cpu_alert_threshold: "70"
+      TF_VAR_sql_dtu_alert_threshold: "80"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Select environment-specific Terraform secrets
+        shell: bash
+        run: |
+          if [[ "${{ needs.context.outputs.target_env }}" == "prod" ]]; then
+            {
+              echo "TF_VAR_sql_admin_password<<EOF"
+              echo "${{ secrets.PROD_SQL_ADMIN_PASSWORD }}"
+              echo "EOF"
+            } >> "$GITHUB_ENV"
+          else
+            {
+              echo "TF_VAR_sql_admin_password<<EOF"
+              echo "${{ secrets.DEV_SQL_ADMIN_PASSWORD }}"
+              echo "EOF"
+            } >> "$GITHUB_ENV"
+          fi
+
+      - name: Terraform format check
+        run: terraform fmt -check -recursive infra/terraform
+
+      - name: Terraform init shared
+        run: terraform -chdir=infra/terraform/envs/shared init -input=false
+
+      - name: Terraform validate shared
+        run: terraform -chdir=infra/terraform/envs/shared validate
+
+      - name: Terraform plan shared
+        run: terraform -chdir=infra/terraform/envs/shared plan -input=false -no-color
+
+      - name: Terraform apply shared
+        if: needs.context.outputs.should_apply == 'true'
+        run: terraform -chdir=infra/terraform/envs/shared apply -input=false -auto-approve
+
+      - name: Terraform init target environment
+        run: terraform -chdir=infra/terraform/envs/${{ needs.context.outputs.target_env }} init -input=false
+
+      - name: Terraform validate target environment
+        run: terraform -chdir=infra/terraform/envs/${{ needs.context.outputs.target_env }} validate
+
+      - name: Terraform plan target environment
+        run: terraform -chdir=infra/terraform/envs/${{ needs.context.outputs.target_env }} plan -input=false -no-color
+
+      - name: Terraform apply target environment
+        if: needs.context.outputs.should_apply == 'true'
+        run: terraform -chdir=infra/terraform/envs/${{ needs.context.outputs.target_env }} apply -input=false -auto-approve
+
+  ansible-syntax-check:
+    name: Ansible syntax check
+    needs: context
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository --yes --update ppa:ansible/ansible
+          sudo apt-get install -y ansible
+          ansible --version
+
+      - name: Install Ansible collections
+        working-directory: config/ansible
+        run: ansible-galaxy collection install -r requirements.yml
+
+      - name: Syntax check Dev playbook
+        if: needs.context.outputs.target_env == 'dev'
+        working-directory: config/ansible
+        run: ansible-playbook -i inventories/dev/hosts.yml playbooks/site-dev.yml --syntax-check
+
+      - name: Syntax check Prod playbook
+        if: needs.context.outputs.target_env == 'prod'
+        working-directory: config/ansible
+        run: ansible-playbook -i inventories/prod/hosts.yml playbooks/site-prod.yml --syntax-check
+
+  configure-dev:
+    name: Configure Dev servers with Ansible
+    needs:
+      - context
+      - terraform
+      - ansible-syntax-check
+    if: needs.context.outputs.target_env == 'dev' && needs.context.outputs.should_apply == 'true'
+    runs-on: [self-hosted, dev]
+
+    env:
+      ANSIBLE_HOST_KEY_CHECKING: "False"
+      ANSIBLE_SSH_PRIVATE_KEY_VALUE: ${{ secrets.ANSIBLE_SSH_PRIVATE_KEY }}
+      SONARQUBE_POSTGRES_PASSWORD: ${{ secrets.SONARQUBE_POSTGRES_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository --yes --update ppa:ansible/ansible
+          sudo apt-get install -y ansible
+          ansible --version
+
+      - name: Install Ansible collections
+        working-directory: config/ansible
+        run: ansible-galaxy collection install -r requirements.yml
+
+      - name: Configure SSH private key
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$ANSIBLE_SSH_PRIVATE_KEY_VALUE" > ~/.ssh/g6-burger-devops
+          chmod 600 ~/.ssh/g6-burger-devops
+
+      - name: Configure Dev servers
+        working-directory: config/ansible
+        run: |
+          ansible-playbook -i inventories/dev/hosts.yml playbooks/site-dev.yml -e deploy_apps=false
+
+  configure-prod:
+    name: Configure Prod servers with Ansible
+    needs:
+      - context
+      - terraform
+      - ansible-syntax-check
+    if: needs.context.outputs.target_env == 'prod' && needs.context.outputs.should_apply == 'true'
+    runs-on: [self-hosted, prod]
+
+    env:
+      ANSIBLE_HOST_KEY_CHECKING: "False"
+      ANSIBLE_SSH_PRIVATE_KEY_VALUE: ${{ secrets.ANSIBLE_SSH_PRIVATE_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository --yes --update ppa:ansible/ansible
+          sudo apt-get install -y ansible
+          ansible --version
+
+      - name: Install Ansible collections
+        working-directory: config/ansible
+        run: ansible-galaxy collection install -r requirements.yml
+
+      - name: Configure SSH private key
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$ANSIBLE_SSH_PRIVATE_KEY_VALUE" > ~/.ssh/g6-burger-devops
+          chmod 600 ~/.ssh/g6-burger-devops
+
+      - name: Configure Prod servers
+        working-directory: config/ansible
+        run: |
+          ansible-playbook -i inventories/prod/hosts.yml playbooks/site-prod.yml -e deploy_apps=false
