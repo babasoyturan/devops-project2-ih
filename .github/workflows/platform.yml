@@ -197,10 +197,11 @@ jobs:
       - name: Install Ansible
         run: |
           sudo apt-get update
-          sudo apt-get install -y software-properties-common
-          sudo add-apt-repository --yes --update ppa:ansible/ansible
-          sudo apt-get install -y ansible
-          ansible --version
+          sudo apt-get install -y python3-pip
+          python3 -m pip install --user --upgrade pip
+          python3 -m pip install --user ansible
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/ansible" --version
 
       - name: Install Ansible collections
         working-directory: config/ansible
@@ -237,10 +238,11 @@ jobs:
       - name: Install Ansible
         run: |
           sudo apt-get update
-          sudo apt-get install -y software-properties-common
-          sudo add-apt-repository --yes --update ppa:ansible/ansible
-          sudo apt-get install -y ansible
-          ansible --version
+          sudo apt-get install -y python3-pip
+          python3 -m pip install --user --upgrade pip
+          python3 -m pip install --user ansible
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/ansible" --version
 
       - name: Install Ansible collections
         working-directory: config/ansible
@@ -278,10 +280,11 @@ jobs:
       - name: Install Ansible
         run: |
           sudo apt-get update
-          sudo apt-get install -y software-properties-common
-          sudo add-apt-repository --yes --update ppa:ansible/ansible
-          sudo apt-get install -y ansible
-          ansible --version
+          sudo apt-get install -y python3-pip
+          python3 -m pip install --user --upgrade pip
+          python3 -m pip install --user ansible
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/ansible" --version
 
       - name: Install Ansible collections
         working-directory: config/ansible
@@ -298,4 +301,5 @@ jobs:
         working-directory: config/ansible
         run: |
           ansible-playbook -i inventories/prod/hosts.yml playbooks/site-prod.yml -e deploy_apps=false
+
 
