@@ -17,3 +17,5 @@ sonarqube_port: 9000
 sql_server_fqdn: "sql-g6-burger-dev-plc.database.windows.net"
 sql_database_name: "sqldb-g6-burger-dev-plc"
 key_vault_name: "kv-g6-burger-dev-plc"
+
+app_user: azureuser

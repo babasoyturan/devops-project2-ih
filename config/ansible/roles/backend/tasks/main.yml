@@ -1,48 +1,107 @@
 ---
-- name: Ensure backend directory exists
+- name: Ensure backend deployment directory exists
   ansible.builtin.file:
-    path: "{{ backend_app_dir }}"
+    path: "{{ backend_deploy_dir }}"
     state: directory
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
     mode: "0755"
 
-- name: Fail when backend DB password is missing
-  ansible.builtin.fail:
-    msg: "backend_db_password is required for backend deployment."
-  when: backend_db_password is not defined or backend_db_password | length == 0
+- name: Check whether Azure CLI is installed
+  ansible.builtin.command: which az
+  register: azure_cli_check
+  changed_when: false
+  failed_when: false
 
-- name: Login to ACR when credentials are provided
-  community.docker.docker_login:
-    registry_url: "{{ acr_login_server }}"
-    username: "{{ acr_username }}"
-    password: "{{ acr_password }}"
-  when:
-    - acr_username is defined
-    - acr_password is defined
-    - acr_username | length > 0
-    - acr_password | length > 0
+- name: Install Azure CLI
+  ansible.builtin.shell: |
+    curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+  args:
+    executable: /bin/bash
+  when: azure_cli_check.rc != 0
+
+- name: Login to Azure using VM managed identity
+  ansible.builtin.command: az login --identity --allow-no-subscriptions
+  changed_when: false
   no_log: true
 
-- name: Render backend environment file
-  ansible.builtin.template:
-    src: backend.env.j2
-    dest: "{{ backend_app_dir }}/.env"
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
+- name: Login Docker to Azure Container Registry using managed identity
+  ansible.builtin.command: az acr login --name "{{ acr_name }}"
+  changed_when: false
+
+- name: Read backend database URL from Key Vault
+  ansible.builtin.command: >
+    az keyvault secret show
+    --vault-name "{{ key_vault_name }}"
+    --name "{{ backend_db_url_secret_name }}"
+    --query value
+    -o tsv
+  register: backend_db_url_result
+  changed_when: false
+  no_log: true
+
+- name: Read backend database username from Key Vault
+  ansible.builtin.command: >
+    az keyvault secret show
+    --vault-name "{{ key_vault_name }}"
+    --name "{{ backend_db_username_secret_name }}"
+    --query value
+    -o tsv
+  register: backend_db_username_result
+  changed_when: false
+  no_log: true
+
+- name: Read backend database password from Key Vault
+  ansible.builtin.command: >
+    az keyvault secret show
+    --vault-name "{{ key_vault_name }}"
+    --name "{{ backend_db_password_secret_name }}"
+    --query value
+    -o tsv
+  register: backend_db_password_result
+  changed_when: false
+  no_log: true
+
+- name: Write backend environment file
+  ansible.builtin.copy:
+    dest: "{{ backend_deploy_dir }}/.env"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
     mode: "0600"
+    content: |
+      SPRING_PROFILES_ACTIVE=azure
+      SERVER_PORT=8080
+      DB_URL={{ backend_db_url_result.stdout }}
+      DB_USERNAME={{ backend_db_username_result.stdout }}
+      DB_PASSWORD={{ backend_db_password_result.stdout }}
+      DB_DRIVER=com.microsoft.sqlserver.jdbc.SQLServerDriver
+      JPA_DDL_AUTO={{ backend_jpa_ddl_auto }}
+      SQL_INIT_MODE={{ backend_sql_init_mode }}
+      JPA_SHOW_SQL={{ backend_jpa_show_sql }}
+      APP_LOG_LEVEL={{ backend_app_log_level }}
+      MANAGEMENT_HEALTH_DETAILS=when-authorized
   no_log: true
 
 - name: Render backend Docker Compose file
   ansible.builtin.template:
-    src: docker-compose.backend.yml.j2
-    dest: "{{ backend_app_dir }}/docker-compose.yml"
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
+    src: docker-compose.yml.j2
+    dest: "{{ backend_deploy_dir }}/docker-compose.yml"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
     mode: "0644"
 
+- name: Pull backend Docker image
+  ansible.builtin.command: docker compose pull
+  args:
+    chdir: "{{ backend_deploy_dir }}"
+  changed_when: true
+
 - name: Start backend container
-  community.docker.docker_compose_v2:
-    project_src: "{{ backend_app_dir }}"
-    state: present
-    pull: always
+  ansible.builtin.command: docker compose up -d --force-recreate
+  args:
+    chdir: "{{ backend_deploy_dir }}"
+  changed_when: true
+
+- name: Show backend container status
+  ansible.builtin.command: docker ps --filter "name=burger-backend"
+  changed_when: false

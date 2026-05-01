@@ -67,3 +67,13 @@ variable "sql_dtu_alert_threshold" {
   type        = number
   default     = 80
 }
+
+variable "shared_resource_group_name" {
+  description = "Resource group name that contains shared resources such as ACR."
+  type        = string
+}
+
+variable "acr_name" {
+  description = "Shared Azure Container Registry name."
+  type        = string
+}

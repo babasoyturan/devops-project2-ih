@@ -15,3 +15,5 @@ backend_port: 8080
 sql_server_fqdn: "sql-g6-burger-prod-plc.database.windows.net"
 sql_database_name: "sqldb-g6-burger-prod-plc"
 key_vault_name: "kv-g6-burger-prod-plc"
+
+app_user: azureuser
