@@ -30,6 +30,14 @@ resource "azurerm_linux_virtual_machine" "this" {
     public_key = var.ssh_public_key
   }
 
+  dynamic "identity" {
+    for_each = var.enable_system_assigned_identity ? [1] : []
+
+    content {
+      type = "SystemAssigned"
+    }
+  }
+
   os_disk {
     name                 = "${var.name}-osdisk"
     caching              = "ReadWrite"

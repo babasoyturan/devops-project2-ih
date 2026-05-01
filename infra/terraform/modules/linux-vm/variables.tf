@@ -45,3 +45,9 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "enable_system_assigned_identity" {
+  description = "Enable system-assigned managed identity for the VM."
+  type        = bool
+  default     = false
+}
