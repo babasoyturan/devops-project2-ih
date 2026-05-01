@@ -537,17 +537,17 @@ module "monitoring" {
   source = "../../modules/monitoring"
 
   name_prefix                  = local.name_prefix
-  resource_group_name           = module.resource_group.name
-  location                      = module.resource_group.location
-  log_analytics_workspace_name  = "log-${local.name_prefix}"
-  application_insights_name     = "appi-${local.name_prefix}"
-  action_group_name             = "ag-alerts-${local.name_prefix}"
-  action_group_short_name       = "g6devops"
-  alert_email_address           = var.alert_email_address
-  application_gateway_id        = module.application_gateway.id
-  sql_database_id               = module.azure_sql.database_id
-  vm_cpu_threshold              = var.vm_cpu_alert_threshold
-  sql_dtu_threshold             = var.sql_dtu_alert_threshold
+  resource_group_name          = module.resource_group.name
+  location                     = module.resource_group.location
+  log_analytics_workspace_name = "log-${local.name_prefix}"
+  application_insights_name    = "appi-${local.name_prefix}"
+  action_group_name            = "ag-alerts-${local.name_prefix}"
+  action_group_short_name      = "g6devops"
+  alert_email_address          = var.alert_email_address
+  application_gateway_id       = module.application_gateway.id
+  sql_database_id              = module.azure_sql.database_id
+  vm_cpu_threshold             = var.vm_cpu_alert_threshold
+  sql_dtu_threshold            = var.sql_dtu_alert_threshold
 
   vm_ids = [
     module.frontend_vm.id,

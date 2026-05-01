@@ -1,0 +1,36 @@
+---
+- name: Ensure SonarQube directory exists
+  ansible.builtin.file:
+    path: "{{ sonarqube_app_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+
+- name: Configure SonarQube kernel parameters
+  ansible.builtin.copy:
+    dest: /etc/sysctl.d/99-sonarqube.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      vm.max_map_count=524288
+      fs.file-max=131072
+
+- name: Apply SonarQube sysctl settings
+  ansible.builtin.command: sysctl --system
+  changed_when: false
+
+- name: Render SonarQube Docker Compose file
+  ansible.builtin.template:
+    src: docker-compose.sonarqube.yml.j2
+    dest: "{{ sonarqube_app_dir }}/docker-compose.yml"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0644"
+
+- name: Start SonarQube stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ sonarqube_app_dir }}"
+    state: present
+    pull: always

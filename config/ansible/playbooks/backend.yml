@@ -1,0 +1,8 @@
+---
+- name: Deploy backend application
+  hosts: backend
+  gather_facts: true
+  roles:
+    - common
+    - docker
+    - backend
