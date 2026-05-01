@@ -1,0 +1,7 @@
+location = "westeurope"
+
+# ACR name must be globally unique and contain only lowercase letters and numbers.
+# Example: acrg6burger12345
+acr_name = "acrg6burger12345"
+
+acr_sku = "Basic"
