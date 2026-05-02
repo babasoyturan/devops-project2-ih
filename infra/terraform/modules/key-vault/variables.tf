@@ -41,3 +41,27 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "public_network_access_enabled" {
+  description = "Whether public network access is enabled for Key Vault."
+  type        = bool
+  default     = false
+}
+
+variable "network_acls_bypass" {
+  description = "Specifies which traffic can bypass Key Vault network rules."
+  type        = string
+  default     = "AzureServices"
+}
+
+variable "network_acls_default_action" {
+  description = "Default action for Key Vault network ACLs."
+  type        = string
+  default     = "Deny"
+}
+
+variable "network_acls_virtual_network_subnet_ids" {
+  description = "Subnet IDs allowed to access Key Vault."
+  type        = list(string)
+  default     = []
+}
