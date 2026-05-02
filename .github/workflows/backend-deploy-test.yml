@@ -14,15 +14,21 @@ on:
         required: true
         default: "dev-test"
 
+  push:
+    branches:
+      - dev
+    paths:
+      - ".github/workflows/backend-deploy-test.yml"
+
 jobs:
   deploy-backend-dev:
     name: Deploy Backend to Dev
     runs-on: [self-hosted, dev]
-    if: inputs.environment == 'dev'
 
     env:
       ANSIBLE_HOST_KEY_CHECKING: "False"
       ANSIBLE_SSH_PRIVATE_KEY_VALUE: ${{ secrets.ANSIBLE_SSH_PRIVATE_KEY }}
+      IMAGE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.image_tag || 'dev-test' }}
 
     steps:
       - name: Checkout repository
@@ -52,12 +58,14 @@ jobs:
       - name: Deploy backend with Ansible
         working-directory: config/ansible
         run: |
+          echo "Deploying backend image tag: $IMAGE_TAG"
+
           ansible-playbook \
             -i inventories/dev/hosts.yml \
             playbooks/backend.yml \
             -e deploy_backend=true \
-            -e app_image_tag="${{ inputs.image_tag }}"
+            -e app_image_tag="$IMAGE_TAG"
 
-      - name: Verify backend container from runner
+      - name: Deployment completed
         run: |
           echo "Backend deployment workflow completed."
