@@ -118,6 +118,13 @@ jobs:
         run: |
           curl -f "$SONAR_HOST_URL/api/server/version"
 
+      - name: Install Java 21 and Maven
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y maven
+          java -version
+          mvn -version
+
       - name: Build backend with Maven
         working-directory: backend
         run: |
