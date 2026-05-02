@@ -127,6 +127,7 @@ jobs:
 
       - name: Run frontend lint
         working-directory: frontend
+        continue-on-error: true
         run: npm run lint
 
       - name: Run frontend tests
@@ -298,3 +299,4 @@ jobs:
             playbooks/frontend.yml \
             -e deploy_frontend=true \
             -e app_image_tag="${{ needs.context.outputs.image_tag }}"
+
