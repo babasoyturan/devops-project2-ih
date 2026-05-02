@@ -30,12 +30,8 @@ resource "azurerm_linux_virtual_machine" "this" {
     public_key = var.ssh_public_key
   }
 
-  dynamic "identity" {
-    for_each = var.enable_system_assigned_identity ? [1] : []
-
-    content {
-      type = "SystemAssigned"
-    }
+  identity {
+    type = "SystemAssigned"
   }
 
   os_disk {
@@ -49,10 +45,6 @@ resource "azurerm_linux_virtual_machine" "this" {
     offer     = "0001-com-ubuntu-server-jammy"
     sku       = "22_04-lts-gen2"
     version   = "latest"
-  }
-
-  identity {
-    type = "SystemAssigned"
   }
 
   tags = var.tags
