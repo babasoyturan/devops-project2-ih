@@ -109,6 +109,7 @@ jobs:
       TF_VAR_location: ${{ vars.LOCATION }}
       TF_VAR_acr_name: ${{ vars.ACR_NAME }}
       TF_VAR_acr_sku: ${{ vars.ACR_SKU }}
+      TF_VAR_shared_resource_group_name: ${{ vars.SHARED_RESOURCE_GROUP_NAME }}
 
       TF_VAR_admin_username: ${{ vars.ADMIN_USERNAME }}
       TF_VAR_ssh_public_key: ${{ vars.SSH_PUBLIC_KEY }}
@@ -301,5 +302,6 @@ jobs:
         working-directory: config/ansible
         run: |
           ansible-playbook -i inventories/prod/hosts.yml playbooks/site-prod.yml -e deploy_apps=false
+
 
 
