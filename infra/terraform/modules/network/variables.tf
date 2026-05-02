@@ -24,6 +24,7 @@ variable "subnets" {
     name                              = string
     address_prefix                    = string
     private_endpoint_network_policies = optional(string, null)
+    service_endpoints                 = optional(list(string), [])
   }))
 }
 

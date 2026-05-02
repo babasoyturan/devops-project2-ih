@@ -352,11 +352,17 @@ module "azure_sql" {
 module "key_vault" {
   source = "../../modules/key-vault"
 
-  name                = "kv-${local.name_prefix}"
-  resource_group_name = module.resource_group.name
-  location            = module.resource_group.location
-  tenant_id           = data.azurerm_client_config.current.tenant_id
-  tags                = local.tags
+  name                          = "kv-${local.name_prefix}"
+  resource_group_name           = module.resource_group.name
+  location                      = module.resource_group.location
+  tenant_id                     = data.azurerm_client_config.current.tenant_id
+  tags                          = local.tags
+  public_network_access_enabled = true
+  network_acls_bypass           = "AzureServices"
+  network_acls_default_action   = "Deny"
+  network_acls_virtual_network_subnet_ids = [
+    module.network.subnet_ids["app_gateway"]
+  ]
 }
 
 module "sql_private_dns" {
@@ -469,6 +475,10 @@ module "application_gateway" {
   routing_rule_priority = 100
 
   tags = local.tags
+
+  depends_on = [
+    azurerm_role_assignment.app_gateway_key_vault_secrets_user
+  ]
 }
 
 module "monitoring" {
