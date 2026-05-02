@@ -1,0 +1,11 @@
+services:
+  frontend:
+    image: "{{ frontend_image }}"
+    container_name: burger-frontend
+    restart: unless-stopped
+    ports:
+      - "{{ frontend_host_port | default(80) }}:80"
+
+networks:
+  default:
+    name: burger-network
