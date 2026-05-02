@@ -1,0 +1,13 @@
+backend_deploy_dir: /opt/burger/backend
+backend_host_port: 8080
+
+key_vault_name: kv-g6-burger-dev-plc
+
+backend_db_url_secret_name: backend-db-url
+backend_db_username_secret_name: backend-db-username
+backend_db_password_secret_name: backend-db-password
+
+backend_jpa_ddl_auto: update
+backend_sql_init_mode: always
+backend_jpa_show_sql: "false"
+backend_app_log_level: INFO

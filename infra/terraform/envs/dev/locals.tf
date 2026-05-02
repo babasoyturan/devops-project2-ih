@@ -1,8 +1,8 @@
 locals {
-  project      = "burger"
-  group        = "g6"
-  environment  = "dev"
-  location     = var.location
+  project     = "burger"
+  group       = "g6"
+  environment = "dev"
+  location    = var.location
   region_code = "plc"
 
   name_prefix = "${local.group}-${local.project}-${local.environment}-${local.region_code}"

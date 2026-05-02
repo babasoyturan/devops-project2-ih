@@ -342,27 +342,29 @@ module "nsg_sonarqube" {
 module "frontend_vm" {
   source = "../../modules/linux-vm"
 
-  name                = "vm-fe-${local.name_prefix}-01"
-  resource_group_name = module.resource_group.name
-  location            = module.resource_group.location
-  subnet_id           = module.network.subnet_ids["frontend"]
-  vm_size             = var.frontend_vm_size
-  admin_username      = var.admin_username
-  ssh_public_key      = var.ssh_public_key
-  tags                = local.tags
+  name                            = "vm-fe-${local.name_prefix}-01"
+  resource_group_name             = module.resource_group.name
+  location                        = module.resource_group.location
+  subnet_id                       = module.network.subnet_ids["frontend"]
+  vm_size                         = var.frontend_vm_size
+  admin_username                  = var.admin_username
+  ssh_public_key                  = var.ssh_public_key
+  tags                            = local.tags
+  enable_system_assigned_identity = true
 }
 
 module "backend_vm" {
   source = "../../modules/linux-vm"
 
-  name                = "vm-be-${local.name_prefix}-01"
-  resource_group_name = module.resource_group.name
-  location            = module.resource_group.location
-  subnet_id           = module.network.subnet_ids["backend"]
-  vm_size             = var.backend_vm_size
-  admin_username      = var.admin_username
-  ssh_public_key      = var.ssh_public_key
-  tags                = local.tags
+  name                            = "vm-be-${local.name_prefix}-01"
+  resource_group_name             = module.resource_group.name
+  location                        = module.resource_group.location
+  subnet_id                       = module.network.subnet_ids["backend"]
+  vm_size                         = var.backend_vm_size
+  admin_username                  = var.admin_username
+  ssh_public_key                  = var.ssh_public_key
+  tags                            = local.tags
+  enable_system_assigned_identity = true
 }
 
 module "runner_vm" {
@@ -517,7 +519,7 @@ module "application_gateway" {
   sonarqube_port = 9000
 
   frontend_probe_path  = "/"
-  backend_probe_path   = "/api/health"
+  backend_probe_path   = "/actuator/health"
   sonarqube_probe_path = "/"
 
   sku_name = "WAF_v2"
@@ -537,17 +539,17 @@ module "monitoring" {
   source = "../../modules/monitoring"
 
   name_prefix                  = local.name_prefix
-  resource_group_name           = module.resource_group.name
-  location                      = module.resource_group.location
-  log_analytics_workspace_name  = "log-${local.name_prefix}"
-  application_insights_name     = "appi-${local.name_prefix}"
-  action_group_name             = "ag-alerts-${local.name_prefix}"
-  action_group_short_name       = "g6devops"
-  alert_email_address           = var.alert_email_address
-  application_gateway_id        = module.application_gateway.id
-  sql_database_id               = module.azure_sql.database_id
-  vm_cpu_threshold              = var.vm_cpu_alert_threshold
-  sql_dtu_threshold             = var.sql_dtu_alert_threshold
+  resource_group_name          = module.resource_group.name
+  location                     = module.resource_group.location
+  log_analytics_workspace_name = "log-${local.name_prefix}"
+  application_insights_name    = "appi-${local.name_prefix}"
+  action_group_name            = "ag-alerts-${local.name_prefix}"
+  action_group_short_name      = "g6devops"
+  alert_email_address          = var.alert_email_address
+  application_gateway_id       = module.application_gateway.id
+  sql_database_id              = module.azure_sql.database_id
+  vm_cpu_threshold             = var.vm_cpu_alert_threshold
+  sql_dtu_threshold            = var.sql_dtu_alert_threshold
 
   vm_ids = [
     module.frontend_vm.id,
@@ -589,5 +591,44 @@ module "key_vault_diagnostics" {
 
   metric_categories = [
     "AllMetrics"
+  ]
+}
+
+resource "azurerm_role_assignment" "backend_vm_key_vault_secrets_user" {
+  scope                            = module.key_vault.id
+  role_definition_name             = "Key Vault Secrets User"
+  principal_id                     = module.backend_vm.principal_id
+  skip_service_principal_aad_check = true
+
+  depends_on = [
+    module.key_vault,
+    module.backend_vm
+  ]
+}
+
+data "azurerm_container_registry" "shared" {
+  name                = var.acr_name
+  resource_group_name = var.shared_resource_group_name
+}
+
+resource "azurerm_role_assignment" "frontend_vm_acr_pull" {
+  scope                            = data.azurerm_container_registry.shared.id
+  role_definition_name             = "AcrPull"
+  principal_id                     = module.frontend_vm.principal_id
+  skip_service_principal_aad_check = true
+
+  depends_on = [
+    module.frontend_vm
+  ]
+}
+
+resource "azurerm_role_assignment" "backend_vm_acr_pull" {
+  scope                            = data.azurerm_container_registry.shared.id
+  role_definition_name             = "AcrPull"
+  principal_id                     = module.backend_vm.principal_id
+  skip_service_principal_aad_check = true
+
+  depends_on = [
+    module.backend_vm
   ]
 }

@@ -1,0 +1,2 @@
+frontend_deploy_dir: /opt/burger/frontend
+frontend_host_port: 80

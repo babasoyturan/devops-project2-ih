@@ -1,0 +1,13 @@
+services:
+  backend:
+    image: "{{ backend_image }}"
+    container_name: burger-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "{{ backend_host_port | default(8080) }}:8080"
+
+networks:
+  default:
+    name: burger-network

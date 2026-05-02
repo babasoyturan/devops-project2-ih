@@ -1,0 +1,24 @@
+---
+environment: prod
+project_name: burger
+group_name: g6
+
+
+app_base_dir: /opt/burger
+frontend_app_dir: /opt/burger/frontend
+backend_app_dir: /opt/burger/backend
+
+frontend_port: 80
+backend_port: 8080
+
+sql_server_fqdn: "sql-g6-burger-prod-plc.database.windows.net"
+sql_database_name: "sqldb-g6-burger-prod-plc"
+key_vault_name: "kv-g6-burger-prod-plc"
+
+app_user: azureuser
+acr_name: acrg6burgerplc2026
+acr_login_server: acrg6burgerplc2026.azurecr.io
+app_image_tag: latest
+backend_image: "{{ acr_login_server }}/burger-backend:{{ app_image_tag }}"
+frontend_image: "{{ acr_login_server }}/burger-frontend:{{ app_image_tag }}"
+

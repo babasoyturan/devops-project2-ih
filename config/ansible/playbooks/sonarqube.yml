@@ -1,0 +1,8 @@
+---
+- name: Deploy SonarQube
+  hosts: sonarqube
+  gather_facts: true
+  roles:
+    - common
+    - docker
+    - sonarqube

@@ -1,0 +1,31 @@
+---
+- name: Configure base packages on all dev servers
+  hosts: all
+  become: true
+  gather_facts: true
+  roles:
+    - common
+    - docker
+
+- name: Configure SonarQube on dev
+  hosts: sonarqube
+  become: true
+  gather_facts: true
+  roles:
+    - sonarqube
+
+- name: Deploy frontend on dev
+  hosts: frontend
+  become: true
+  gather_facts: true
+  roles:
+    - role: frontend
+      when: deploy_apps | default(false) | bool
+
+- name: Deploy backend on dev
+  hosts: backend
+  become: true
+  gather_facts: true
+  roles:
+    - role: backend
+      when: deploy_apps | default(false) | bool

@@ -1,0 +1,57 @@
+---
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install common packages
+  ansible.builtin.apt:
+    name:
+      - curl
+      - wget
+      - git
+      - unzip
+      - jq
+      - ca-certificates
+      - gnupg
+      - lsb-release
+      - apt-transport-https
+      - software-properties-common
+      - net-tools
+      - htop
+    state: present
+
+- name: Ensure application base directory exists
+  ansible.builtin.file:
+    path: "{{ app_base_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+
+- name: Ensure frontend app directory exists
+  ansible.builtin.file:
+    path: "{{ frontend_app_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+  when: inventory_hostname in groups.get('frontend', [])
+
+- name: Ensure backend app directory exists
+  ansible.builtin.file:
+    path: "{{ backend_app_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+  when: inventory_hostname in groups.get('backend', [])
+
+- name: Ensure SonarQube app directory exists
+  ansible.builtin.file:
+    path: "{{ sonarqube_app_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+  when: inventory_hostname in groups.get('sonarqube', [])

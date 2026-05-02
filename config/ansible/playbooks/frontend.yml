@@ -1,0 +1,8 @@
+---
+- name: Deploy frontend application
+  hosts: frontend
+  gather_facts: true
+  roles:
+    - common
+    - docker
+    - frontend
