@@ -436,7 +436,7 @@ module "application_gateway" {
   backend_port  = 8080
 
   frontend_probe_path = "/"
-  backend_probe_path  = "/api/health"
+  backend_probe_path  = "/actuator/health"
 
   sku_name = "WAF_v2"
   sku_tier = "WAF_v2"
