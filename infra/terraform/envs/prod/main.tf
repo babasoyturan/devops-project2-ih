@@ -418,6 +418,13 @@ module "app_gateway_public_ip" {
   tags                = local.tags
 }
 
+resource "azurerm_user_assigned_identity" "app_gateway" {
+  name                = "id-agw-${local.name_prefix}"
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
+  tags                = local.tags
+}
+
 module "application_gateway" {
   source = "../../modules/application-gateway"
 
@@ -445,6 +452,19 @@ module "application_gateway" {
   waf_enabled          = true
   waf_firewall_mode    = "Prevention"
   waf_rule_set_version = "3.2"
+
+  enable_https = true
+
+  host_names = [
+    "burgerapp.live",
+    "www.burgerapp.live"
+  ]
+
+  identity_ids = [
+    azurerm_user_assigned_identity.app_gateway.id
+  ]
+
+  ssl_certificate_key_vault_secret_id = "https://${module.key_vault.name}.vault.azure.net/secrets/cert-burgerapp-live"
 
   routing_rule_priority = 100
 
@@ -545,5 +565,17 @@ resource "azurerm_role_assignment" "backend_vm_acr_pull" {
 
   depends_on = [
     module.backend_vm
+  ]
+}
+
+resource "azurerm_role_assignment" "app_gateway_key_vault_secrets_user" {
+  scope                            = module.key_vault.id
+  role_definition_name             = "Key Vault Secrets User"
+  principal_id                     = azurerm_user_assigned_identity.app_gateway.principal_id
+  skip_service_principal_aad_check = true
+
+  depends_on = [
+    module.key_vault,
+    azurerm_user_assigned_identity.app_gateway
   ]
 }
