@@ -133,3 +133,27 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "enable_https" {
+  description = "Enable HTTPS listener."
+  type        = bool
+  default     = false
+}
+
+variable "ssl_certificate_key_vault_secret_id" {
+  description = "Key Vault secret ID for Application Gateway TLS certificate."
+  type        = string
+  default     = null
+}
+
+variable "host_names" {
+  description = "Host names for HTTPS listener."
+  type        = list(string)
+  default     = []
+}
+
+variable "identity_ids" {
+  description = "User assigned identity IDs for Application Gateway."
+  type        = list(string)
+  default     = []
+}

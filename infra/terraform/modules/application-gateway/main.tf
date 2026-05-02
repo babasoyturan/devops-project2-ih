@@ -18,6 +18,13 @@ locals {
 
   url_path_map_name = "path-map-main"
   routing_rule_name = "rule-main"
+
+  frontend_port_https_name    = "port-https-443"
+  listener_https_name         = "listener-https"
+  ssl_certificate_name        = "cert-keyvault"
+  redirect_configuration_name = "redirect-http-to-https"
+  http_routing_rule_name      = "rule-http-redirect"
+  https_routing_rule_name     = "rule-https-main"
 }
 
 resource "azurerm_application_gateway" "this" {
@@ -25,6 +32,15 @@ resource "azurerm_application_gateway" "this" {
   resource_group_name = var.resource_group_name
   location            = var.location
   tags                = var.tags
+
+  dynamic "identity" {
+    for_each = length(var.identity_ids) > 0 ? [1] : []
+
+    content {
+      type         = "UserAssigned"
+      identity_ids = var.identity_ids
+    }
+  }
 
   sku {
     name     = var.sku_name
@@ -49,9 +65,27 @@ resource "azurerm_application_gateway" "this" {
     public_ip_address_id = var.public_ip_address_id
   }
 
+  dynamic "ssl_certificate" {
+    for_each = var.enable_https ? [1] : []
+
+    content {
+      name                = local.ssl_certificate_name
+      key_vault_secret_id = var.ssl_certificate_key_vault_secret_id
+    }
+  }
+
   frontend_port {
     name = local.frontend_port_http_name
     port = 80
+  }
+
+  dynamic "frontend_port" {
+    for_each = var.enable_https ? [1] : []
+
+    content {
+      name = local.frontend_port_https_name
+      port = 443
+    }
   }
 
   backend_address_pool {
@@ -145,6 +179,19 @@ resource "azurerm_application_gateway" "this" {
     protocol                       = "Http"
   }
 
+  dynamic "http_listener" {
+    for_each = var.enable_https ? [1] : []
+
+    content {
+      name                           = local.listener_https_name
+      frontend_ip_configuration_name = local.frontend_ip_configuration_name
+      frontend_port_name             = local.frontend_port_https_name
+      protocol                       = "Https"
+      ssl_certificate_name           = local.ssl_certificate_name
+      host_names                     = var.host_names
+    }
+  }
+
   url_path_map {
     name                               = local.url_path_map_name
     default_backend_address_pool_name  = local.frontend_pool_name
@@ -169,11 +216,37 @@ resource "azurerm_application_gateway" "this" {
     }
   }
 
+  dynamic "redirect_configuration" {
+    for_each = var.enable_https ? [1] : []
+
+    content {
+      name                 = local.redirect_configuration_name
+      redirect_type        = "Permanent"
+      target_listener_name = local.listener_https_name
+      include_path         = true
+      include_query_string = true
+    }
+  }
+
   request_routing_rule {
-    name               = local.routing_rule_name
-    rule_type          = "PathBasedRouting"
+    name               = var.enable_https ? local.http_routing_rule_name : local.routing_rule_name
+    rule_type          = var.enable_https ? "Basic" : "PathBasedRouting"
     http_listener_name = local.listener_http_name
-    url_path_map_name  = local.url_path_map_name
+    url_path_map_name  = var.enable_https ? null : local.url_path_map_name
     priority           = var.routing_rule_priority
+
+    redirect_configuration_name = var.enable_https ? local.redirect_configuration_name : null
+  }
+
+  dynamic "request_routing_rule" {
+    for_each = var.enable_https ? [1] : []
+
+    content {
+      name               = local.https_routing_rule_name
+      rule_type          = "PathBasedRouting"
+      http_listener_name = local.listener_https_name
+      url_path_map_name  = local.url_path_map_name
+      priority           = var.routing_rule_priority + 1
+    }
   }
 }
