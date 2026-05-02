@@ -19,6 +19,8 @@ on:
       - dev
     paths:
       - ".github/workflows/frontend-deploy-test.yml"
+      - "config/ansible/roles/frontend/**"
+      - "config/ansible/inventories/dev/**"
 
 jobs:
   deploy-frontend-dev:
@@ -69,5 +71,3 @@ jobs:
       - name: Deployment completed
         run: |
           echo "Frontend deployment workflow completed."
-
-# trigger frontend deploy test
