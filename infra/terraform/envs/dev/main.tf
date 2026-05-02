@@ -519,7 +519,7 @@ module "application_gateway" {
   sonarqube_port = 9000
 
   frontend_probe_path  = "/"
-  backend_probe_path   = "/api/health"
+  backend_probe_path   = "/actuator/health"
   sonarqube_probe_path = "/"
 
   sku_name = "WAF_v2"
