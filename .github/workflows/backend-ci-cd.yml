@@ -1,0 +1,273 @@
+name: Backend CI/CD
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+    paths:
+      - "backend/**"
+      - "config/ansible/roles/backend/**"
+      - "config/ansible/playbooks/backend.yml"
+      - "config/ansible/inventories/**"
+      - ".github/workflows/backend-ci-cd.yml"
+
+  push:
+    branches:
+      - dev
+      - main
+    paths:
+      - "backend/**"
+      - "config/ansible/roles/backend/**"
+      - "config/ansible/playbooks/backend.yml"
+      - "config/ansible/inventories/**"
+      - ".github/workflows/backend-ci-cd.yml"
+
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+      image_tag:
+        description: "Backend Docker image tag"
+        required: false
+        default: ""
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: backend-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  context:
+    name: Resolve backend context
+    runs-on: ubuntu-latest
+
+    outputs:
+      target_env: ${{ steps.resolve.outputs.target_env }}
+      should_deploy: ${{ steps.resolve.outputs.should_deploy }}
+      image_tag: ${{ steps.resolve.outputs.image_tag }}
+
+    steps:
+      - name: Resolve context
+        id: resolve
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            ref="${{ github.base_ref }}"
+          elif [[ "${{ github.event_name }}" == "push" ]]; then
+            ref="${{ github.ref_name }}"
+          else
+            ref="${{ inputs.environment }}"
+          fi
+
+          case "$ref" in
+            dev)
+              target_env="dev"
+              ;;
+            main|prod)
+              target_env="prod"
+              ;;
+            *)
+              echo "Unsupported target ref/environment: $ref"
+              exit 1
+              ;;
+          esac
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            should_deploy="false"
+          else
+            should_deploy="true"
+          fi
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ inputs.image_tag }}" ]]; then
+            image_tag="${{ inputs.image_tag }}"
+          else
+            image_tag="${{ github.sha }}"
+          fi
+
+          echo "target_env=$target_env" >> "$GITHUB_OUTPUT"
+          echo "should_deploy=$should_deploy" >> "$GITHUB_OUTPUT"
+          echo "image_tag=$image_tag" >> "$GITHUB_OUTPUT"
+
+          echo "Target environment: $target_env"
+          echo "Should deploy: $should_deploy"
+          echo "Image tag: $image_tag"
+
+  build-test-scan:
+    name: Build, test and scan backend
+    needs: context
+    runs-on: [self-hosted, dev]
+
+    env:
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify SonarQube connectivity
+        run: |
+          curl -f "$SONAR_HOST_URL/api/server/version"
+
+      - name: Build backend with Maven
+        working-directory: backend
+        run: |
+          mvn clean package -DskipTests -B
+
+      - name: Scan backend with SonarQube
+        working-directory: backend
+        run: |
+          mvn sonar:sonar \
+            -Dsonar.projectKey=burger-backend \
+            -Dsonar.projectName="Burger Backend" \
+            -Dsonar.host.url="$SONAR_HOST_URL" \
+            -Dsonar.token="$SONAR_TOKEN" \
+            -B
+
+      - name: Validate backend Docker build
+        run: |
+          docker build -t burger-backend:ci-test ./backend
+
+  docker-push:
+    name: Build and push backend image
+    needs:
+      - context
+      - build-test-scan
+    if: needs.context.outputs.should_deploy == 'true'
+    runs-on: [self-hosted, dev]
+
+    outputs:
+      image_tag: ${{ needs.context.outputs.image_tag }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Resolve ACR login server
+        id: acr
+        run: |
+          ACR_LOGIN_SERVER=$(az acr show --name "${{ vars.ACR_NAME }}" --query loginServer -o tsv)
+          echo "login_server=$ACR_LOGIN_SERVER" >> "$GITHUB_OUTPUT"
+          echo "ACR login server: $ACR_LOGIN_SERVER"
+
+      - name: Login to ACR
+        run: |
+          az acr login --name "${{ vars.ACR_NAME }}"
+
+      - name: Build backend image
+        run: |
+          docker build \
+            -t "${{ steps.acr.outputs.login_server }}/burger-backend:${{ needs.context.outputs.image_tag }}" \
+            ./backend
+
+      - name: Push backend image
+        run: |
+          docker push "${{ steps.acr.outputs.login_server }}/burger-backend:${{ needs.context.outputs.image_tag }}"
+
+  deploy-dev:
+    name: Deploy backend to Dev
+    needs:
+      - context
+      - docker-push
+    if: needs.context.outputs.target_env == 'dev' && needs.context.outputs.should_deploy == 'true'
+    runs-on: [self-hosted, dev]
+
+    env:
+      ANSIBLE_HOST_KEY_CHECKING: "False"
+      ANSIBLE_SSH_PRIVATE_KEY_VALUE: ${{ secrets.ANSIBLE_SSH_PRIVATE_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          python3 -m pip install --user --upgrade pip
+          python3 -m pip install --user ansible
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/ansible" --version
+
+      - name: Install Ansible collections
+        working-directory: config/ansible
+        run: |
+          ansible-galaxy collection install -r requirements.yml
+
+      - name: Configure SSH private key
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$ANSIBLE_SSH_PRIVATE_KEY_VALUE" > ~/.ssh/g6-burger-devops
+          chmod 600 ~/.ssh/g6-burger-devops
+
+      - name: Deploy backend to Dev
+        working-directory: config/ansible
+        run: |
+          ansible-playbook \
+            -i inventories/dev/hosts.yml \
+            playbooks/backend.yml \
+            -e deploy_backend=true \
+            -e app_image_tag="${{ needs.context.outputs.image_tag }}"
+
+  deploy-prod:
+    name: Deploy backend to Prod
+    needs:
+      - context
+      - docker-push
+    if: needs.context.outputs.target_env == 'prod' && needs.context.outputs.should_deploy == 'true'
+    runs-on: [self-hosted, prod]
+
+    env:
+      ANSIBLE_HOST_KEY_CHECKING: "False"
+      ANSIBLE_SSH_PRIVATE_KEY_VALUE: ${{ secrets.ANSIBLE_SSH_PRIVATE_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          python3 -m pip install --user --upgrade pip
+          python3 -m pip install --user ansible
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/ansible" --version
+
+      - name: Install Ansible collections
+        working-directory: config/ansible
+        run: |
+          ansible-galaxy collection install -r requirements.yml
+
+      - name: Configure SSH private key
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$ANSIBLE_SSH_PRIVATE_KEY_VALUE" > ~/.ssh/g6-burger-devops
+          chmod 600 ~/.ssh/g6-burger-devops
+
+      - name: Deploy backend to Prod
+        working-directory: config/ansible
+        run: |
+          ansible-playbook \
+            -i inventories/prod/hosts.yml \
+            playbooks/backend.yml \
+            -e deploy_backend=true \
+            -e app_image_tag="${{ needs.context.outputs.image_tag }}"
