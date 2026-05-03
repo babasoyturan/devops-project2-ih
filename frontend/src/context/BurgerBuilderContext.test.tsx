@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { BurgerBuilderProvider, useBurgerBuilder } from './BurgerBuilderContext';
+import { BurgerBuilderProvider } from './BurgerBuilderContext';
+import { useBurgerBuilder } from './useBurgerBuilder';
 import type { Ingredient } from '../types';
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -177,4 +178,3 @@ describe('BurgerBuilderContext', () => {
     }).toThrow('useBurgerBuilder must be used within a BurgerBuilderProvider');
   });
 });
-

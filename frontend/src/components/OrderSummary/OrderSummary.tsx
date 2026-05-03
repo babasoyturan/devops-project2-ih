@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCart } from '../../context/CartContext';
+import { useCart } from '../../context/useCart';
 import { createOrder, getCart, addToCart } from '../../services/api';
 import { getSessionId } from '../../utils/sessionManager';
 import type { CustomerDetails } from '../../types';
@@ -287,4 +287,3 @@ const OrderSummary: React.FC = () => {
 };
 
 export default OrderSummary;
-
