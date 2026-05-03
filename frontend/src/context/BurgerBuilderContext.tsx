@@ -1,19 +1,7 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { useState } from 'react';
 import type { ReactNode } from 'react';
 import type { BurgerLayer, Ingredient } from '../types';
-
-interface BurgerBuilderContextType {
-  layers: BurgerLayer[];
-  ingredients: Ingredient[];
-  setIngredients: (ingredients: Ingredient[]) => void;
-  addLayer: (ingredientId: number) => void;
-  removeLayer: (index: number) => void;
-  clearLayers: () => void;
-  getTotalPrice: () => number;
-  getIngredientById: (id: number) => Ingredient | undefined;
-}
-
-const BurgerBuilderContext = createContext<BurgerBuilderContextType | undefined>(undefined);
+import { BurgerBuilderContext } from './burgerBuilderContext';
 
 export const BurgerBuilderProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [layers, setLayers] = useState<BurgerLayer[]>([]);
@@ -81,12 +69,3 @@ export const BurgerBuilderProvider: React.FC<{ children: ReactNode }> = ({ child
     </BurgerBuilderContext.Provider>
   );
 };
-
-export const useBurgerBuilder = (): BurgerBuilderContextType => {
-  const context = useContext(BurgerBuilderContext);
-  if (!context) {
-    throw new Error('useBurgerBuilder must be used within a BurgerBuilderProvider');
-  }
-  return context;
-};
-

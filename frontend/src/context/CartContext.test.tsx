@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { CartProvider, useCart } from './CartContext';
+import { CartProvider } from './CartContext';
+import { useCart } from './useCart';
 import type { CartItem } from '../types';
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -142,4 +143,3 @@ describe('CartContext', () => {
     }).toThrow('useCart must be used within a CartProvider');
   });
 });
-

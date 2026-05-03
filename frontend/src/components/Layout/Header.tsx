@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useCart } from '../../context/CartContext';
+import { useCart } from '../../context/useCart';
 import './Header.css';
 
 const Header: React.FC = () => {
@@ -31,4 +31,3 @@ const Header: React.FC = () => {
 };
 
 export default Header;
-
