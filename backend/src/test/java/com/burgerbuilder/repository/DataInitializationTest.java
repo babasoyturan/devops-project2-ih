@@ -1,7 +1,6 @@
 package com.burgerbuilder.repository;
 
 import com.burgerbuilder.entity.Ingredient;
-import com.burgerbuilder.repository.IngredientRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -32,8 +31,9 @@ class DataInitializationTest {
         List<Ingredient> ingredients = ingredientRepository.findAll();
         
         // Then: We should have default ingredients
-        assertThat(ingredients).isNotEmpty();
-        assertThat(ingredients).hasSizeGreaterThanOrEqualTo(4); // We expect at least 4 test ingredients
+        assertThat(ingredients)
+                .isNotEmpty()
+                .hasSizeGreaterThanOrEqualTo(4); // We expect at least 4 test ingredients
         
         // Verify specific ingredients exist
         assertThat(ingredientRepository.findByName("Classic Sesame Bun")).isPresent();

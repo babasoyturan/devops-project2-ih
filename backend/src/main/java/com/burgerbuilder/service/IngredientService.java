@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +24,7 @@ public class IngredientService {
         List<Ingredient> ingredients = ingredientRepository.findByIsAvailableTrueOrderBySortOrderAsc();
         return ingredients.stream()
                 .map(this::convertToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
     
     public List<IngredientDto> getIngredientsByCategory(String category) {
@@ -33,7 +32,7 @@ public class IngredientService {
         List<Ingredient> ingredients = ingredientRepository.findByCategoryAndIsAvailableTrueOrderBySortOrderAsc(category);
         return ingredients.stream()
                 .map(this::convertToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
     
     public List<String> getAllCategories() {
@@ -70,7 +69,7 @@ public class IngredientService {
         List<Ingredient> ingredients = ingredientRepository.searchIngredients(searchTerm);
         return ingredients.stream()
                 .map(this::convertToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
     
     public IngredientDto convertToDto(Ingredient ingredient) {

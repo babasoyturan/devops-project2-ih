@@ -17,13 +17,14 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
 public class OrderService {
+
+    private static final String ORDER_RESOURCE = "Order";
     
     private final OrderRepository orderRepository;
     private final CartItemRepository cartItemRepository;
@@ -72,7 +73,7 @@ public class OrderService {
     public OrderDto getOrderById(Long orderId) {
         log.debug("Fetching order with id: {}", orderId);
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
+                .orElseThrow(() -> new ResourceNotFoundException(ORDER_RESOURCE, "id", orderId));
         
         return convertToDto(order);
     }
@@ -80,7 +81,7 @@ public class OrderService {
     public OrderDto getOrderByOrderNumber(String orderNumber) {
         log.debug("Fetching order with order number: {}", orderNumber);
         Order order = orderRepository.findByOrderNumber(orderNumber)
-                .orElseThrow(() -> new ResourceNotFoundException("Order", "orderNumber", orderNumber));
+                .orElseThrow(() -> new ResourceNotFoundException(ORDER_RESOURCE, "orderNumber", orderNumber));
         
         return convertToDto(order);
     }
@@ -89,7 +90,7 @@ public class OrderService {
         log.debug("Updating order status for orderId: {} to: {}", orderId, status);
         
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
+                .orElseThrow(() -> new ResourceNotFoundException(ORDER_RESOURCE, "id", orderId));
         
         order.setStatus(status);
         order.setUpdatedAt(LocalDateTime.now());
@@ -105,7 +106,7 @@ public class OrderService {
         List<Order> orders = orderRepository.findByCustomerEmailOrderByCreatedAtDesc(email);
         return orders.stream()
                 .map(this::convertToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
     
     public List<OrderDto> getOrdersBySessionId(String sessionId) {
@@ -115,7 +116,7 @@ public class OrderService {
         List<Order> orders = orderRepository.findAll();
         return orders.stream()
                 .map(this::convertToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
     
     public List<OrderDto> getOrderHistory(String email) {
@@ -127,7 +128,7 @@ public class OrderService {
             List<Order> orders = orderRepository.findAll();
             return orders.stream()
                     .map(this::convertToDto)
-                    .collect(Collectors.toList());
+                    .toList();
         }
     }
     
@@ -137,7 +138,7 @@ public class OrderService {
         
         return orders.stream()
                 .map(this::convertToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
     
     private List<CartItem> validateCartItems(String sessionId, List<Long> cartItemIds) {
@@ -218,7 +219,7 @@ public class OrderService {
         if (order.getOrderItems() != null) {
             dto.setOrderItems(order.getOrderItems().stream()
                     .map(this::convertOrderItemToDto)
-                    .collect(Collectors.toList()));
+                    .toList());
         }
         
         return dto;
@@ -237,7 +238,7 @@ public class OrderService {
         if (orderItem.getOrderLayers() != null) {
             dto.setOrderLayers(orderItem.getOrderLayers().stream()
                     .map(this::convertOrderLayerToDto)
-                    .collect(Collectors.toList()));
+                    .toList());
         }
         
         return dto;
