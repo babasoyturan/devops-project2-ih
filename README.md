@@ -1,286 +1,477 @@
-# Burger Builder Application
+# Burger Builder Platform
 
-A full-stack web application for building and ordering custom burgers with a modern React frontend and Spring Boot backend API.
+## Secure Multi-Environment Azure Deployment with CI/CD, Terraform, Ansible, Docker, SonarQube, and HTTPS
 
-## Project Structure
+Burger Builder Platform is a full-stack web application deployed on Azure using a production-inspired DevOps architecture.
 
-```
-capstone_project_ih/
-├── frontend/                 # React + TypeScript + Vite frontend
-│   ├── src/
-│   │   ├── components/      # React components
-│   │   ├── context/         # React Context providers
-│   │   ├── services/        # API service layer
-│   │   ├── types/           # TypeScript type definitions
-│   │   └── utils/           # Utility functions
-│   ├── public/              # Static assets
-│   ├── package.json         # Frontend dependencies
-│   ├── vite.config.ts       # Vite configuration
-│   ├── nginx.conf           # Nginx configuration for production
-│   └── README.md            # Frontend-specific documentation
-├── backend/                 # Spring Boot REST API
-│   ├── src/main/java/com/burgerbuilder/
-│   │   ├── controller/      # REST controllers
-│   │   ├── service/         # Business logic services
-│   │   ├── repository/      # Data access layer
-│   │   ├── entity/          # JPA entities
-│   │   ├── dto/             # Data transfer objects
-│   │   ├── exception/       # Custom exception handling
-│   │   └── config/          # Configuration classes
-│   ├── src/main/resources/
-│   │   ├── application.properties          # Default configuration
-│   │   ├── application-docker.properties   # Docker/PostgreSQL config
-│   │   ├── application-azure.properties    # Azure SQL config
-│   │   ├── schema.sql                      # Database schema
-│   │   └── data.sql                        # Initial data
-│   ├── pom.xml              # Maven dependencies and build config
-│   └── TESTING.md           # Backend testing documentation
-├── environment.env.example  # Environment variables template
-└── environment.env          # Environment variables (create from example)
-```
+The goal of this project was not only to deploy an application, but to build a controlled and repeatable delivery platform. The solution includes separate Development and Production environments, automated CI/CD pipelines, Infrastructure as Code, server configuration automation, code quality checks, custom HTTPS domains, and private database access.
 
-## Frontend Application
+---
 
-### Tech Stack
+## Live URLs
 
-- **Framework**: React 19.1.1
-- **Language**: TypeScript 5.8.3
-- **Build Tool**: Vite 7.1.7
-- **Routing**: React Router DOM 7.9.3
-- **HTTP Client**: Axios 1.12.2
-- **Testing**: Vitest 1.0.4 + Testing Library
-- **Linting**: ESLint 9.36.0
-- **CSS**: Vanilla CSS with CSS modules
+| Environment | URL | Purpose |
+|---|---|---|
+| Production | https://burgerapp.live | Main production application |
+| Production alias | https://www.burgerapp.live | WWW production alias |
+| Development | https://dev.burgerapp.live | Development environment |
+| SonarQube | https://sonar.burgerapp.live | Code quality dashboard |
 
-### Key Features
+---
 
-- Interactive burger builder with drag-and-drop ingredients
-- Shopping cart management with session persistence
-- Order creation and tracking
-- Order history viewing
-- Responsive design with modern UI/UX
-- Real-time API integration
-- Comprehensive testing coverage
+## Project Objectives
 
-### Backend URL Configuration
+The main objectives of this project were:
 
-The frontend connects to the backend API through the following configuration:
+- Deploy a full-stack web application on Azure.
+- Use separate Development and Production environments.
+- Avoid direct deployment to Production.
+- Automate infrastructure provisioning with Terraform.
+- Automate VM configuration and application deployment with Ansible.
+- Use Docker for frontend and backend deployment.
+- Use Azure Application Gateway WAF as the secure public entry point.
+- Enable HTTPS with a custom domain.
+- Store secrets and TLS certificates in Azure Key Vault.
+- Use Azure SQL Database with private access.
+- Integrate SonarQube quality checks into CI/CD.
+- Use GitHub Actions as the main automation platform.
 
-**Location**: `frontend/src/services/api.ts`
+---
 
-```typescript
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+## What Makes This Project Different
+
+Instead of using a single environment and deploying directly to production, this project uses a staged delivery model:
+
+```text
+Developer Code
+    |
+    v
+Pull Request
+    |
+    v
+Development Environment
+    |
+    v
+Manual Validation / Quality Checks
+    |
+    v
+Main Branch
+    |
+    v
+Production Environment
 ```
 
-**Required Environment Variable**:
-- `VITE_API_BASE_URL`: The base URL for the backend API (defaults to `http://localhost:8080`)
+This is closer to how real teams release software. Development acts like a test kitchen where changes are validated before being served to real users in Production.
 
-**Usage**:
-1. Create a `.env` file in the frontend directory
-2. Add: `VITE_API_BASE_URL=http://your-backend-url:8080`
-3. For production: `VITE_API_BASE_URL=https://your-production-api.com`
+---
 
-### Frontend Compilation and Deployment
+## High-Level Architecture
 
-#### Development Setup
+```text
+Users / Browsers
+        |
+        v
+Name.com DNS
+        |
+        v
+Azure Application Gateway WAF v2
+        |
+        |-- /        -> Frontend VM running Docker + Nginx
+        |
+        |-- /api/*   -> Backend VM running Docker + Spring Boot
+                              |
+                              v
+                       Azure SQL Database
+                       via Private Endpoint
+```
+
+Supporting services:
+
+```text
+GitHub Actions
+  -> Terraform
+  -> Ansible
+  -> Azure Container Registry
+  -> SonarQube
+  -> Azure VMs
+
+Azure Key Vault
+  -> Backend secrets
+  -> TLS certificates for Application Gateway
+
+Azure Monitor / Log Analytics
+  -> Logs
+  -> Metrics
+  -> Alerts
+```
+
+Architecture diagram:
+
+```text
+docs/architecture-diagram.png
+```
+
+---
+
+## Environment Design
+
+### Development Environment
+
+The Development environment is used for testing and validation before production release.
+
+Main components:
+
+- Azure Resource Group for Dev
+- Dev VNet
+- Azure Application Gateway WAF v2
+- Frontend Linux VM
+- Backend Linux VM
+- Self-hosted GitHub Actions runner VM
+- SonarQube VM
+- Azure SQL Database
+- SQL Private Endpoint
+- Azure Key Vault
+- Key Vault Private Endpoint
+- Azure Bastion
+- Log Analytics and Azure Monitor alerts
+
+URL:
+
+```text
+https://dev.burgerapp.live
+```
+
+SonarQube:
+
+```text
+https://sonar.burgerapp.live
+```
+
+### Production Environment
+
+The Production environment is used for the live application.
+
+Main components:
+
+- Azure Resource Group for Prod
+- Prod VNet
+- Azure Application Gateway WAF v2
+- Frontend Linux VM
+- Backend Linux VM
+- Self-hosted GitHub Actions runner VM
+- Azure SQL Database
+- SQL Private Endpoint
+- Azure Key Vault
+- Key Vault Private Endpoint
+- Azure Bastion
+- Log Analytics and Azure Monitor alerts
+
+URLs:
+
+```text
+https://burgerapp.live
+https://www.burgerapp.live
+```
+
+### Shared Services
+
+Shared services are used by both environments.
+
+Main shared component:
+
+- Azure Container Registry
+
+The shared ACR stores Docker images for both frontend and backend services.
+
+---
+
+## Technology Stack
+
+### Frontend
+
+- React
+- TypeScript
+- Vite
+- Nginx
+- Docker
+
+### Backend
+
+- Java 21
+- Spring Boot
+- Maven
+- Azure SQL Database
+- Docker
+
+### DevOps and Cloud
+
+- Azure
+- Terraform
+- Ansible
+- GitHub Actions
+- Azure Container Registry
+- Azure Application Gateway WAF v2
+- Azure Key Vault
+- Azure SQL Database
+- Azure Bastion
+- Azure Monitor
+- Log Analytics
+- SonarQube
+- Let’s Encrypt / Certbot
+- Name.com DNS
+
+---
+
+## CI/CD Workflows
+
+The project uses three main GitHub Actions workflows.
+
+### 1. Platform Provision and Configure
+
+Workflow:
+
+```text
+.github/workflows/platform.yml
+```
+
+Purpose:
+
+- Runs Terraform plan/apply.
+- Provisions Azure infrastructure.
+- Configures VMs using Ansible.
+- Installs and configures Docker.
+- Prepares Dev and Prod environments.
+
+### 2. Backend CI/CD
+
+Workflow:
+
+```text
+.github/workflows/backend-ci-cd.yml
+```
+
+Purpose:
+
+- Builds backend with Maven.
+- Runs SonarQube scan.
+- Builds backend Docker image.
+- Pushes backend image to Azure Container Registry.
+- Deploys backend container to Dev or Prod using Ansible.
+
+### 3. Frontend CI/CD
+
+Workflow:
+
+```text
+.github/workflows/frontend-ci-cd.yml
+```
+
+Purpose:
+
+- Installs frontend dependencies.
+- Runs frontend lint/test/build.
+- Runs SonarQube scan.
+- Builds frontend Docker image.
+- Pushes frontend image to Azure Container Registry.
+- Deploys frontend container to Dev or Prod using Ansible.
+
+---
+
+## Branching and Promotion Strategy
+
+The project uses a staged release process:
+
+```text
+feature branch
+    |
+    v
+Pull Request to dev
+    |
+    v
+Development deployment and validation
+    |
+    v
+Pull Request from dev to main
+    |
+    v
+Production deployment
+```
+
+Important team rule:
+
+```text
+Do not mix infrastructure/configuration changes and application code changes in the same pull request.
+```
+
+Reason:
+
+- Platform workflows and application workflows may run independently.
+- Separating changes reduces race conditions.
+- Troubleshooting becomes easier.
+- Each PR has a clearer purpose.
+
+---
+
+## Security Highlights
+
+Security decisions:
+
+- Azure Application Gateway WAF v2 is the only public application entry point.
+- Frontend and backend VMs do not expose public IP addresses.
+- Azure SQL is accessed privately through a Private Endpoint.
+- Application secrets are stored in Azure Key Vault.
+- TLS certificates are stored in Azure Key Vault and used by Application Gateway.
+- Managed identities and RBAC are used for Azure resource access.
+- Azure Bastion is used for secure VM administration.
+- GitHub Secrets store CI/CD-sensitive values.
+- SonarQube validates code quality before deployment.
+
+---
+
+## Key Vault Usage
+
+Key Vault stores:
+
+- Backend database URL
+- Backend database username
+- Backend database password
+- TLS certificate for Application Gateway
+
+Backend deployment flow:
+
+```text
+Azure Key Vault
+    |
+    v
+Ansible reads secrets during deployment
+    |
+    v
+Protected .env file on backend VM
+    |
+    v
+Docker Compose starts backend container
+    |
+    v
+Spring Boot reads environment variables
+```
+
+Certificate flow:
+
+```text
+Let’s Encrypt / Certbot
+    |
+    v
+PFX certificate
+    |
+    v
+Azure Key Vault
+    |
+    v
+Application Gateway HTTPS listener
+```
+
+---
+
+## SonarQube
+
+SonarQube is used for code quality validation.
+
+URL:
+
+```text
+https://sonar.burgerapp.live
+```
+
+Integrated with:
+
+- Backend CI/CD
+- Frontend CI/CD
+
+SonarQube checks:
+
+- Reliability
+- Security
+- Maintainability
+
+The Quality Gate is intentionally demo-friendly, so it catches serious issues without blocking the demo because of strict coverage requirements.
+
+---
+
+## Validation URLs
+
+Production:
+
+```text
+https://burgerapp.live
+https://www.burgerapp.live
+https://burgerapp.live/api/ingredients
+```
+
+Development:
+
+```text
+https://dev.burgerapp.live
+https://dev.burgerapp.live/api/ingredients
+```
+
+SonarQube:
+
+```text
+https://sonar.burgerapp.live
+```
+
+---
+
+## Quick Smoke Test Commands
+
+Production:
+
+```powershell
+curl.exe -I "https://burgerapp.live"
+curl.exe -I "https://www.burgerapp.live"
+curl.exe -I "https://burgerapp.live/api/ingredients"
+```
+
+Development:
+
+```powershell
+curl.exe -I "https://dev.burgerapp.live"
+curl.exe -I "https://dev.burgerapp.live/api/ingredients"
+```
+
+SonarQube:
+
+```powershell
+curl.exe -I "https://sonar.burgerapp.live"
+```
+
+Backend VM health check:
 
 ```bash
-cd frontend
-npm install
-npm run dev          # Start development server (http://localhost:5173)
-npm run test         # Run tests
-npm run test:ui      # Run tests with UI
-npm run test:coverage # Run tests with coverage
-npm run lint         # Run ESLint
+curl -i http://localhost:8080/actuator/health
 ```
 
-#### Production Build
+Docker container check:
 
 ```bash
-cd frontend
-npm run build        # Build for production
-npm run preview      # Preview production build locally
+docker ps
 ```
 
-The build process:
-1. **TypeScript Compilation**: `tsc -b` compiles TypeScript to JavaScript
-2. **Vite Build**: Bundles and optimizes assets
-3. **Output**: Creates `dist/` folder with production-ready files
+---
 
-#### Deployment Options
+## Summary
 
-**Option 1: Static Hosting (Recommended)**
-- Build the application: `npm run build`
-- Deploy the `dist/` folder to any static hosting service:
-  - Vercel, Netlify, AWS S3, Azure Static Web Apps
-  - Set `VITE_API_BASE_URL` environment variable in hosting platform
+This project demonstrates a realistic DevOps delivery platform rather than a simple cloud deployment.
 
-**Option 2: Docker with Nginx**
-- The project includes `nginx.conf` for containerized deployment
-- Nginx serves the built React app with optimizations:
-  - Gzip compression
-  - Static asset caching
-  - Security headers
-  - SPA routing support
+Main achievements:
 
-**Option 3: Traditional Web Server**
-- Upload built files to any web server (Apache, Nginx, IIS)
-- Configure server to serve `index.html` for all routes (SPA support)
-
-## Backend Application
-
-### Tech Stack
-
-- **Framework**: Spring Boot 3.2.0
-- **Language**: Java 21
-- **Build Tool**: Maven
-- **Database**: 
-  - PostgreSQL (Docker/Development)
-  - Azure SQL Database (Production)
-- **ORM**: Spring Data JPA + Hibernate
-- **Validation**: Spring Boot Validation
-- **Utilities**: Lombok
-- **Testing**: Spring Boot Test + H2 Database
-
-### Key Features
-
-- RESTful API for burger ingredients, cart, and orders
-- Session-based cart management
-- Database initialization with sample data
-- CORS configuration for frontend integration
-- Comprehensive error handling
-- Multi-environment configuration support
-
-### Environment Variables Required
-
-The backend requires the following environment variables (defined in `environment.env`):
-
-#### Database Configuration
-- `DB_HOST`: Database server hostname
-- `DB_PORT`: Database port (1433 for SQL Server, 5432 for PostgreSQL)
-- `DB_NAME`: Database name
-- `DB_USERNAME`: Database username
-- `DB_PASSWORD`: Database password
-- `DB_DRIVER`: JDBC driver class name
-
-#### Application Configuration
-- `SPRING_PROFILES_ACTIVE`: Active Spring profile
-  - `docker`: Uses PostgreSQL configuration
-  - `azure`: Uses Azure SQL configuration
-- `SERVER_PORT`: Server port (default: 8080)
-- `CORS_ALLOWED_ORIGINS`: Comma-separated list of allowed CORS origins
-
-#### Example Configuration
-
-```bash
-# For Docker/PostgreSQL Development
-SPRING_PROFILES_ACTIVE=docker
-DB_HOST=database
-DB_PORT=5432
-DB_NAME=burgerbuilder
-DB_USERNAME=postgres
-DB_PASSWORD=YourStrong!Passw0rd
-DB_DRIVER=org.postgresql.Driver
-
-# For Azure SQL Production
-SPRING_PROFILES_ACTIVE=azure
-DB_HOST=your-server.database.windows.net
-DB_PORT=1433
-DB_NAME=burgerbuilder
-DB_USERNAME=your-username
-DB_PASSWORD=your-password
-DB_DRIVER=com.microsoft.sqlserver.jdbc.SQLServerDriver
-```
-
-### Backend Compilation and Deployment
-
-#### Development Setup
-
-```bash
-cd backend
-mvn clean install     # Download dependencies and compile
-mvn spring-boot:run   # Start development server
-```
-
-#### Production Build
-
-```bash
-cd backend
-mvn clean package     # Build JAR file
-```
-
-The build process:
-1. **Dependency Resolution**: Downloads all Maven dependencies
-2. **Compilation**: Compiles Java source code to bytecode
-3. **Testing**: Runs unit and integration tests
-4. **Packaging**: Creates executable JAR file in `target/` directory
-
-#### Deployment Options
-
-**Option 1: JAR File Execution**
-```bash
-java -jar target/burger-builder-backend-1.0.0.jar
-```
-
-**Option 2: Docker Deployment**
-```bash
-# Build Docker image
-docker build -t burger-builder-backend .
-
-# Run with environment variables
-docker run -p 8080:8080 --env-file environment.env burger-builder-backend
-```
-
-**Option 3: Cloud Platform Deployment**
-- **Azure App Service**: Deploy JAR file directly
-- **AWS Elastic Beanstalk**: Upload JAR file
-- **Google Cloud Run**: Containerized deployment
-- **Heroku**: Git-based deployment
-
-#### Environment-Specific Deployment
-
-**Development (PostgreSQL)**:
-1. Set `SPRING_PROFILES_ACTIVE=docker`
-2. Configure PostgreSQL connection variables
-3. Run with Docker Compose or local PostgreSQL
-
-**Production (Azure SQL)**:
-1. Set `SPRING_PROFILES_ACTIVE=azure`
-2. Configure Azure SQL connection variables
-3. Deploy to cloud platform with proper security configuration
-
-## Getting Started
-
-1. **Clone the repository**
-2. **Set up environment variables**:
-   ```bash
-   cp environment.env.example environment.env
-   # Edit environment.env with your database credentials
-   ```
-3. **Start the backend**:
-   ```bash
-   cd backend
-   mvn spring-boot:run
-   ```
-4. **Start the frontend**:
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-5. **Access the application**: http://localhost:5173
-
-## API Endpoints
-
-- `GET /api/ingredients` - Get all ingredients
-- `GET /api/ingredients/{category}` - Get ingredients by category
-- `POST /api/cart/items` - Add item to cart
-- `GET /api/cart/{sessionId}` - Get cart items
-- `DELETE /api/cart/items/{itemId}` - Remove cart item
-- `POST /api/orders` - Create order
-- `GET /api/orders/{orderId}` - Get order details
-- `GET /api/orders/history` - Get order history
-
-## License
-
-This project is part of a capstone project for educational purposes.
+- Secure Azure architecture
+- Separate Dev and Prod environments
+- Automated infrastructure with Terraform
+- Automated server configuration with Ansible
+- Dockerized frontend and backend
+- GitHub Actions CI/CD
+- SonarQube quality scanning
+- HTTPS custom domains
+- Private database access
+- Key Vault based secret and certificate management
