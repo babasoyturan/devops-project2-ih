@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCart } from '../../context/CartContext';
+import { useCart } from '../../context/useCart';
 import CartItemCard from './CartItemCard';
 import './Cart.css';
 
@@ -88,4 +88,3 @@ const Cart: React.FC = () => {
 };
 
 export default Cart;
-
