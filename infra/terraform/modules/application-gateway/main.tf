@@ -25,6 +25,9 @@ locals {
   redirect_configuration_name = "redirect-http-to-https"
   http_routing_rule_name      = "rule-http-redirect"
   https_routing_rule_name     = "rule-https-main"
+
+  listener_sonarqube_https_name = "listener-https-sonarqube"
+  sonarqube_https_rule_name     = "rule-https-sonarqube"
 }
 
 resource "azurerm_application_gateway" "this" {
@@ -180,6 +183,19 @@ resource "azurerm_application_gateway" "this" {
   }
 
   dynamic "http_listener" {
+    for_each = var.enable_https && var.enable_sonarqube && length(var.sonarqube_host_names) > 0 ? [1] : []
+
+    content {
+      name                           = local.listener_sonarqube_https_name
+      frontend_ip_configuration_name = local.frontend_ip_configuration_name
+      frontend_port_name             = local.frontend_port_https_name
+      protocol                       = "Https"
+      ssl_certificate_name           = local.ssl_certificate_name
+      host_names                     = var.sonarqube_host_names
+    }
+  }
+
+  dynamic "http_listener" {
     for_each = var.enable_https ? [1] : []
 
     content {
@@ -236,6 +252,19 @@ resource "azurerm_application_gateway" "this" {
     priority           = var.routing_rule_priority
 
     redirect_configuration_name = var.enable_https ? local.redirect_configuration_name : null
+  }
+
+  dynamic "request_routing_rule" {
+    for_each = var.enable_https && var.enable_sonarqube && length(var.sonarqube_host_names) > 0 ? [1] : []
+
+    content {
+      name                       = local.sonarqube_https_rule_name
+      rule_type                  = "Basic"
+      http_listener_name         = local.listener_sonarqube_https_name
+      backend_address_pool_name  = local.sonar_pool_name
+      backend_http_settings_name = local.sonar_http_settings_name
+      priority                   = var.routing_rule_priority + 2
+    }
   }
 
   dynamic "request_routing_rule" {

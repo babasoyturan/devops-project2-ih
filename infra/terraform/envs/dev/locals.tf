@@ -18,8 +18,9 @@ locals {
 
   subnets = {
     app_gateway = {
-      name           = "snet-agw"
-      address_prefix = "10.60.0.0/24"
+      name              = "snet-agw"
+      address_prefix    = "10.60.0.0/24"
+      service_endpoints = ["Microsoft.KeyVault"]
     }
 
     frontend = {

@@ -157,3 +157,9 @@ variable "identity_ids" {
   type        = list(string)
   default     = []
 }
+
+variable "sonarqube_host_names" {
+  description = "Host names for the optional SonarQube HTTPS listener."
+  type        = list(string)
+  default     = []
+}
