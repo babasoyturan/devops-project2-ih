@@ -20,7 +20,7 @@ const OrderHistory: React.FC = () => {
       setError(null);
       
       let orderData: Order[];
-      if (email && email.trim()) {
+      if (email?.trim()) {
         orderData = await getOrdersByCustomerEmail(email.trim());
       } else {
         orderData = await getOrderHistory();
@@ -59,19 +59,19 @@ const OrderHistory: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'pending':
-        return '#ffc107';
+        return '#fde68a';
       case 'confirmed':
-        return '#17a2b8';
+        return '#bfdbfe';
       case 'preparing':
-        return '#fd7e14';
+        return '#fdba74';
       case 'ready':
-        return '#28a745';
+        return '#bbf7d0';
       case 'delivered':
-        return '#6f42c1';
+        return '#ddd6fe';
       case 'cancelled':
-        return '#dc3545';
+        return '#fecaca';
       default:
-        return '#6c757d';
+        return '#e5e7eb';
     }
   };
 

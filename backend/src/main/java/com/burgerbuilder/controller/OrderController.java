@@ -79,7 +79,7 @@ public class OrderController {
     }
     
     @RequestMapping(value = "/**", method = RequestMethod.OPTIONS)
-    public ResponseEntity<?> handleOptions() {
+    public ResponseEntity<Void> handleOptions() {
         return ResponseEntity.ok().build();
     }
 }

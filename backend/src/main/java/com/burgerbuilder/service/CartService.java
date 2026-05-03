@@ -19,7 +19,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -84,7 +83,7 @@ public class CartService {
         List<CartItem> cartItems = cartItemRepository.findBySessionIdOrderByCreatedAtDesc(sessionId);
         return cartItems.stream()
                 .map(this::convertToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
     
     public void removeCartItem(Long cartItemId, String sessionId) {
@@ -148,7 +147,7 @@ public class CartService {
         if (cartItem.getBurgerLayers() != null) {
             dto.setBurgerLayers(cartItem.getBurgerLayers().stream()
                     .map(this::convertLayerToDto)
-                    .collect(Collectors.toList()));
+                    .toList());
         }
         
         return dto;

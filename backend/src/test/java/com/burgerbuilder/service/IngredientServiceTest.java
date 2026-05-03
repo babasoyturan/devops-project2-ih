@@ -17,8 +17,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -89,8 +87,9 @@ class IngredientServiceTest {
         List<String> result = ingredientService.getAllCategories();
 
         // Then
-        assertThat(result).hasSize(5);
-        assertThat(result).containsExactly("Bread", "Protein", "Cheese", "Vegetables", "Sauces");
+        assertThat(result)
+                .hasSize(5)
+                .containsExactly("Bread", "Protein", "Cheese", "Vegetables", "Sauces");
         verify(ingredientRepository).findDistinctCategories();
     }
 

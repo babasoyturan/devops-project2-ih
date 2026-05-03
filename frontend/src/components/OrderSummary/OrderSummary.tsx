@@ -59,8 +59,7 @@ const OrderSummary: React.FC = () => {
       if (backendCartItems.length === 0 && cart.length > 0) {
         for (const cartItem of cart) {
           // Add each layer as a separate cart item
-          for (let i = 0; i < cartItem.layers.length; i++) {
-            const layer = cartItem.layers[i];
+          for (const layer of cartItem.layers) {
             await addToCart({
               sessionId,
               ingredientId: layer.ingredientId,

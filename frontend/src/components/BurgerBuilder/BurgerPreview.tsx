@@ -36,20 +36,23 @@ const BurgerPreview: React.FC<BurgerPreviewProps> = ({ layers, getIngredientById
           layers.map((layer, index) => {
             const ingredient = getIngredientById(layer.ingredientId);
             const display = getIngredientDisplay(ingredient);
+            const ingredientName = ingredient?.name || 'Unknown';
             
             return (
-              <div
-                key={index}
+              <button
+                type="button"
+                key={layer.ingredientId}
                 className={`burger-layer ${display.className}`}
                 onClick={() => onRemoveLayer(index)}
-                title="Click to remove"
+                title={`Remove ${ingredientName}`}
+                aria-label={`Remove ${ingredientName} layer`}
               >
                 <span className="layer-icon">{display.icon}</span>
-                <span className="layer-name">{ingredient?.name || 'Unknown'}</span>
+                <span className="layer-name">{ingredientName}</span>
                 {layer.quantity > 1 && (
                   <span className="layer-quantity">x{layer.quantity}</span>
                 )}
-              </div>
+              </button>
             );
           })
         )}
@@ -60,4 +63,3 @@ const BurgerPreview: React.FC<BurgerPreviewProps> = ({ layers, getIngredientById
 };
 
 export default BurgerPreview;
-

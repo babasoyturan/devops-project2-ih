@@ -39,8 +39,7 @@ class OrderRepositoryTest {
         Optional<Order> result = orderRepository.findByOrderNumber(orderNumber);
 
         // Then
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(testOrder);
+        assertThat(result).contains(testOrder);
         verify(orderRepository).findByOrderNumber(orderNumber);
     }
 
