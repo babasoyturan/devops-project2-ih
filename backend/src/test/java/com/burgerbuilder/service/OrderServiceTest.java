@@ -23,7 +23,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -80,7 +79,6 @@ class OrderServiceTest {
     @Test
     void createOrderFromCart_ShouldCreateOrderSuccessfully() {
         // Given
-        List<CartItem> cartItems = Arrays.asList(testCartItem);
         when(cartItemRepository.findById(1L)).thenReturn(Optional.of(testCartItem));
         when(cartItemRepository.findById(2L)).thenReturn(Optional.of(testCartItem));
         when(orderRepository.save(any(Order.class))).thenReturn(testOrder);

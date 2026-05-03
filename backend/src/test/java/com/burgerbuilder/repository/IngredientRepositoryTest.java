@@ -83,8 +83,7 @@ class IngredientRepositoryTest {
         Optional<Ingredient> result = ingredientRepository.findByName(name);
 
         // Then
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(testIngredient);
+        assertThat(result).contains(testIngredient);
         verify(ingredientRepository).findByName(name);
     }
 

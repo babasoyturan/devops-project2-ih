@@ -30,7 +30,7 @@
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
-  background-color: #007bff;
+  background-color: #0056b3;
   color: white;
   cursor: pointer;
   font-size: 14px;
@@ -40,7 +40,7 @@
 
 .filter-button:hover,
 .refresh-button:hover {
-  background-color: #0056b3;
+  background-color: #003f85;
   transform: translateY(-2px);
 }
 
@@ -84,12 +84,12 @@
 }
 
 .filter-submit-button {
-  background-color: #28a745;
+  background-color: #1f7a34;
   color: white;
 }
 
 .filter-submit-button:hover {
-  background-color: #218838;
+  background-color: #166429;
 }
 
 .clear-filter-button {
@@ -140,7 +140,7 @@
 
 .retry-button {
   padding: 12px 24px;
-  background-color: #007bff;
+  background-color: #0056b3;
   color: white;
   border: none;
   border-radius: 8px;
@@ -151,7 +151,7 @@
 }
 
 .retry-button:hover {
-  background-color: #0056b3;
+  background-color: #003f85;
 }
 
 .no-orders {
@@ -228,7 +228,7 @@
   gap: 8px;
   padding: 8px 16px;
   border-radius: 20px;
-  color: white;
+  color: #1f2937;
   font-weight: 500;
   font-size: 14px;
 }

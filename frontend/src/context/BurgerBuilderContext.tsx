@@ -1,75 +1,85 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { BurgerLayer, Ingredient } from '../types';
 import { BurgerBuilderContext } from './burgerBuilderContext';
+
+const addIngredientLayer = (layers: BurgerLayer[], ingredientId: number): BurgerLayer[] => {
+  const existingLayer = layers.find((layer) => layer.ingredientId === ingredientId);
+
+  if (!existingLayer) {
+    return [...layers, { ingredientId, quantity: 1 }];
+  }
+
+  return layers.map((layer) =>
+    layer.ingredientId === ingredientId
+      ? { ...layer, quantity: layer.quantity + 1 }
+      : layer
+  );
+};
+
+const removeIngredientLayer = (layers: BurgerLayer[], index: number): BurgerLayer[] => {
+  const layer = layers[index];
+
+  if (!layer) {
+    return layers;
+  }
+
+  if (layer.quantity > 1) {
+    return layers.map((existingLayer, layerIndex) =>
+      layerIndex === index
+        ? { ...existingLayer, quantity: existingLayer.quantity - 1 }
+        : existingLayer
+    );
+  }
+
+  return layers.filter((_, layerIndex) => layerIndex !== index);
+};
+
+const findIngredientById = (ingredients: Ingredient[], id: number): Ingredient | undefined => {
+  return ingredients.find((ingredient) => ingredient.id === id);
+};
+
+const calculateBurgerTotal = (layers: BurgerLayer[], ingredients: Ingredient[]): number => {
+  return layers.reduce((total, layer) => {
+    const ingredient = findIngredientById(ingredients, layer.ingredientId);
+    return total + (ingredient ? ingredient.price * layer.quantity : 0);
+  }, 0);
+};
 
 export const BurgerBuilderProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [layers, setLayers] = useState<BurgerLayer[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
 
-  const value = useMemo(() => {
-    const addLayer = (ingredientId: number) => {
-      setLayers((prevLayers) => {
-        const existingLayer = prevLayers.find((layer) => layer.ingredientId === ingredientId);
+  const addLayer = useCallback((ingredientId: number) => {
+    setLayers((prevLayers) => addIngredientLayer(prevLayers, ingredientId));
+  }, []);
 
-        if (existingLayer) {
-          return prevLayers.map((layer) =>
-            layer.ingredientId === ingredientId
-              ? { ...layer, quantity: layer.quantity + 1 }
-              : layer
-          );
-        }
+  const removeLayer = useCallback((index: number) => {
+    setLayers((prevLayers) => removeIngredientLayer(prevLayers, index));
+  }, []);
 
-        return [...prevLayers, { ingredientId, quantity: 1 }];
-      });
-    };
+  const clearLayers = useCallback(() => {
+    setLayers([]);
+  }, []);
 
-    const removeLayer = (index: number) => {
-      setLayers((prevLayers) => {
-        const layer = prevLayers[index];
+  const getIngredientById = useCallback((id: number): Ingredient | undefined => {
+    return findIngredientById(ingredients, id);
+  }, [ingredients]);
 
-        if (!layer) {
-          return prevLayers;
-        }
-
-        if (layer.quantity > 1) {
-          return prevLayers.map((existingLayer, layerIndex) =>
-            layerIndex === index
-              ? { ...existingLayer, quantity: existingLayer.quantity - 1 }
-              : existingLayer
-          );
-        }
-
-        return prevLayers.filter((_, layerIndex) => layerIndex !== index);
-      });
-    };
-
-    const clearLayers = () => {
-      setLayers([]);
-    };
-
-    const getIngredientById = (id: number): Ingredient | undefined => {
-      return ingredients.find((ingredient) => ingredient.id === id);
-    };
-
-    const getTotalPrice = (): number => {
-      return layers.reduce((total, layer) => {
-        const ingredient = getIngredientById(layer.ingredientId);
-        return total + (ingredient ? ingredient.price * layer.quantity : 0);
-      }, 0);
-    };
-
-    return {
-      layers,
-      ingredients,
-      setIngredients,
-      addLayer,
-      removeLayer,
-      clearLayers,
-      getTotalPrice,
-      getIngredientById,
-    };
+  const getTotalPrice = useCallback((): number => {
+    return calculateBurgerTotal(layers, ingredients);
   }, [ingredients, layers]);
+
+  const value = useMemo(() => ({
+    layers,
+    ingredients,
+    setIngredients,
+    addLayer,
+    removeLayer,
+    clearLayers,
+    getTotalPrice,
+    getIngredientById,
+  }), [addLayer, clearLayers, getIngredientById, getTotalPrice, ingredients, layers, removeLayer]);
 
   return (
     <BurgerBuilderContext.Provider value={value}>

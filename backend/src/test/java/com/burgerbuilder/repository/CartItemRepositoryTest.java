@@ -62,8 +62,7 @@ class CartItemRepositoryTest {
         Optional<CartItem> result = cartItemRepository.findBySessionIdAndIngredientId(sessionId, ingredientId);
 
         // Then
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(testCartItem);
+        assertThat(result).contains(testCartItem);
         verify(cartItemRepository).findBySessionIdAndIngredientId(sessionId, ingredientId);
     }
 
@@ -95,8 +94,7 @@ class CartItemRepositoryTest {
         Optional<CartItem> result = cartItemRepository.findBySessionAndIngredient(sessionId, ingredientId);
 
         // Then
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(testCartItem);
+        assertThat(result).contains(testCartItem);
         verify(cartItemRepository).findBySessionAndIngredient(sessionId, ingredientId);
     }
 

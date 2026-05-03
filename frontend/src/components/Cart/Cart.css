@@ -107,7 +107,7 @@
 
 .checkout-button {
   width: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3652c4 0%, #55308c 100%);
   color: white;
   border: none;
   border-radius: 10px;
@@ -127,8 +127,8 @@
 .continue-shopping {
   width: 100%;
   background: white;
-  color: #667eea;
-  border: 2px solid #667eea;
+  color: #3652c4;
+  border: 2px solid #3652c4;
   border-radius: 10px;
   padding: 0.9rem;
   font-size: 1rem;
@@ -170,7 +170,7 @@
 }
 
 .build-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3652c4 0%, #55308c 100%);
   color: white;
   border: none;
   border-radius: 10px;
@@ -219,4 +219,3 @@
     font-size: 4rem;
   }
 }
-

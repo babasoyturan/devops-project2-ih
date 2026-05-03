@@ -25,7 +25,7 @@
 .burger-top-bun,
 .burger-bottom-bun {
   background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
-  color: white;
+  color: #4a2f1b;
   text-align: center;
   padding: 1rem;
   border-radius: 8px;
@@ -89,19 +89,19 @@
 
 .burger-layer.bun {
   background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
-  color: white;
+  color: #4a2f1b;
   border-color: #fda085;
 }
 
 .burger-layer.topping {
   background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-  color: white;
+  color: #1f2937;
   border-color: #8fd3f4;
 }
 
 .burger-layer.sauce {
   background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-  color: white;
+  color: #3f2b12;
   border-color: #fee140;
 }
 

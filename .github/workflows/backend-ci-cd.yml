@@ -134,12 +134,12 @@ jobs:
         run: |
           curl -f "$SONAR_HOST_URL/api/server/version"
 
-      - name: Build backend with Maven
+      - name: Build and test backend with Maven
         working-directory: backend
         run: |
           java -version
           mvn -version
-          mvn clean package -DskipTests -B
+          mvn clean verify -B
 
       - name: Scan backend with SonarQube
         working-directory: backend
@@ -147,6 +147,7 @@ jobs:
           mvn sonar:sonar \
             -Dsonar.projectKey=burger-backend \
             -Dsonar.projectName="Burger Backend" \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
             -Dsonar.host.url="$SONAR_HOST_URL" \
             -Dsonar.token="$SONAR_TOKEN" \
             -B
