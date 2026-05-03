@@ -9,12 +9,16 @@ interface IngredientCardProps {
 
 const IngredientCard: React.FC<IngredientCardProps> = ({ ingredient, onAdd }) => {
   return (
-    <div className="ingredient-card" onClick={() => onAdd(ingredient.id)}>
+    <button
+      type="button"
+      className="ingredient-card"
+      onClick={() => onAdd(ingredient.id)}
+    >
       <div className="ingredient-icon">{getCategoryIcon(ingredient.category)}</div>
       <h3 className="ingredient-name">{ingredient.name}</h3>
       <p className="ingredient-price">${ingredient.price.toFixed(2)}</p>
-      <button className="add-button">Add +</button>
-    </div>
+      <span className="add-button">Add +</span>
+    </button>
   );
 };
 
@@ -29,4 +33,3 @@ const getCategoryIcon = (category: string): string => {
 };
 
 export default IngredientCard;
-

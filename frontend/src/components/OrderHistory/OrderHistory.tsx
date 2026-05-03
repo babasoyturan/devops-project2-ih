@@ -20,7 +20,7 @@ const OrderHistory: React.FC = () => {
       setError(null);
       
       let orderData: Order[];
-      if (email && email.trim()) {
+      if (email?.trim()) {
         orderData = await getOrdersByCustomerEmail(email.trim());
       } else {
         orderData = await getOrderHistory();

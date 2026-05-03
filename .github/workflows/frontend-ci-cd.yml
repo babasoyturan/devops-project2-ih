@@ -113,6 +113,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
@@ -129,9 +131,9 @@ jobs:
         working-directory: frontend
         run: npm run lint
 
-      - name: Run frontend tests
+      - name: Run frontend tests with coverage
         working-directory: frontend
-        run: npm run test -- --run
+        run: npm run test:coverage -- --run
 
       - name: Build frontend
         working-directory: frontend
@@ -153,6 +155,7 @@ jobs:
             -Dsonar.tests=src \
             -Dsonar.test.inclusions="**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx" \
             -Dsonar.exclusions="node_modules/**,dist/**,coverage/**" \
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
             -Dsonar.host.url="$SONAR_HOST_URL" \
             -Dsonar.token="$SONAR_TOKEN"
 

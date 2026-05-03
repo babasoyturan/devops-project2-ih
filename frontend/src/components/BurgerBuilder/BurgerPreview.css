@@ -54,6 +54,7 @@
 }
 
 .burger-layer {
+  appearance: none;
   background: white;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
@@ -63,12 +64,21 @@
   gap: 0.75rem;
   cursor: pointer;
   transition: all 0.2s;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
 }
 
 .burger-layer:hover {
   background: #fee;
   border-color: #f66;
   transform: translateX(4px);
+}
+
+.burger-layer:focus-visible {
+  outline: 3px solid #2f5bd2;
+  outline-offset: 2px;
 }
 
 .burger-layer.patty {
@@ -122,4 +132,3 @@
     font-size: 1.5rem;
   }
 }
-

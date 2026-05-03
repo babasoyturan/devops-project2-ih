@@ -2,7 +2,7 @@ export const getSessionId = (): string => {
   let sessionId = localStorage.getItem('sessionId');
   
   if (!sessionId) {
-    sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    sessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
     localStorage.setItem('sessionId', sessionId);
   }
   
@@ -12,4 +12,3 @@ export const getSessionId = (): string => {
 export const clearSession = (): void => {
   localStorage.removeItem('sessionId');
 };
-

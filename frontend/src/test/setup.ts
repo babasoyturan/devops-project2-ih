@@ -9,8 +9,8 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-// Mock window.matchMedia
-Object.defineProperty(window, 'matchMedia', {
+// Mock matchMedia for components that expect browser media queries.
+Object.defineProperty(globalThis, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation(query => ({
     matches: false,
@@ -23,4 +23,3 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: vi.fn(),
   })),
 });
-
